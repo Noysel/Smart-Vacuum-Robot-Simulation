@@ -29,7 +29,12 @@ public class Future<T> {
      */
 	public T get() {
 		if (!isDone){ //maybe replace to a while
-			this.wait();
+			try {
+				this.wait();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
 		}
 		return result;
 	}
@@ -63,7 +68,12 @@ public class Future<T> {
      */
 	public T get(long timeout, TimeUnit unit) {
 		if (!isDone){ 
-			this.wait(unit.toMillis(timeout));
+			try {
+				this.wait(unit.toMillis(timeout));
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
 		}
 		return result;
 	}
