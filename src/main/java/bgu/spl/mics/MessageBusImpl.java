@@ -4,6 +4,9 @@ import java.util.Queue;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
@@ -13,100 +16,96 @@ import java.util.LinkedList;
  */
 public class MessageBusImpl implements MessageBus {
 	
-	private List<QuadMSQ> listMsqs;
+	private ConcurrentHashMap<MicroService, ConcurrentLinkedQueue<Message>> msqMap;
+	private ConcurrentHashMap<MicroService, List<Queue<MicroService>>> refMap;
+	private ConcurrentHashMap<Class<? extends Message>, ConcurrentLinkedQueue<MicroService>> subMessageMap;
+	private ConcurrentHashMap<Event, Future> eventFutureMap;
+
 	private int nextIndex;
 
 	public MessageBusImpl() {
-		listMsqs = new ArrayList<>();
-		nextIndex = 0;
+		msqMap = new ConcurrentHashMap<>();
+		refMap = new ConcurrentHashMap<>();
+		subMessageMap = new ConcurrentHashMap<>();
+		eventFutureMap = new ConcurrentHashMap<>();
 	}
 
 	@Override
 
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		m.subscribeEvent(type, null); // CHECKKKKK
-		for (int i = 0; i < listMsqs.size(); i++) {
-			if (listMsqs.get(i).getMicroService() == m) {
-				listMsqs.get(i).getEventSub().add(type);
-			}
-		}
+		subMessageMap.computeIfAbsent(type, placeHolder -> new ConcurrentLinkedQueue<>()).add(m);
+		refMap.computeIfAbsent(m, placeHolder -> new CopyOnWriteArrayList<>()).add(subMessageMap.get(type));
 	}
 
 	@Override
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		m.subscribeBroadcast(type, null); // CHECKKKKK
-		for (int i = 0; i < listMsqs.size(); i++) {
-			if (listMsqs.get(i).getMicroService() == m) {
-				listMsqs.get(i).getBroadcastSub().add(type);
-			}
-		}
+		subMessageMap.computeIfAbsent(type, placeHolder -> new ConcurrentLinkedQueue<>()).add(m);
+		refMap.computeIfAbsent(m, placeHolder -> new CopyOnWriteArrayList<>()).add(subMessageMap.get(type));
 
 	}
 
 	@Override
 	public <T> void complete(Event<T> e, T result) {
-		
-
+		eventFutureMap.get(e).resolve(result);
 	}
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		for (int i = 0; i < listMsqs.size(); i++) {
-			if (listMsqs.get(i).getBroadcastSub().contains(b)) {
-				listMsqs.get(i).getMessageQueue().add(b);
-				notifyAll();
+		Queue<MicroService> q = subMessageMap.get(b);
+		if (!q.isEmpty()) {
+			for (MicroService ms : q) {
+				msqMap.get(ms).add(b);
 			}
+			notifyAll();
 		}
-
 	}
 	
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		for (int i = nextIndex; i < listMsqs.size() % listMsqs.size(); i++) {
-			if (listMsqs.get(i).getEventSub().contains(e.getClass()))  {
-				listMsqs.get(i).getMessageQueue().add(e);
-				nextIndex = i + 1;
-				notifyAll();
-				break;
-			}
+		
+		Queue<MicroService> q = subMessageMap.get(e);
+		if (q.isEmpty()) {
+			return null;
 		}
-		return new Future<>();
+		MicroService ms = q.poll();
+		msqMap.get(ms).add(e);
+		q.add(ms); //Ensures that the order of MS will be according to Round Robbin
+		Future<T> future = new Future<>();
+		eventFutureMap.put(e, future);
+		notifyAll();
+		return future;
+		
 	}
 
 	@Override
 	public void register(MicroService m) {
-		listMsqs.add(new QuadMSQ(m));
+		msqMap.put(m, new ConcurrentLinkedQueue<>());
 	}
 
 	@Override
-	public void unregister(MicroService m) { // CHECK IF NEEDED TO REMOVE REFERNECES
-		for (int i = 0; i < listMsqs.size(); i++) {
-			if (listMsqs.get(i).getMicroService() == m) {
-				listMsqs.remove(i);
-				break;
-			}
+	public void unregister(MicroService m) { 
+		List<Queue<MicroService>> listOfPointers = refMap.get(m);
+		for (Queue<MicroService> q : listOfPointers) {
+			q.remove(m);
 		}
+		msqMap.remove(m);
 	}
 
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		boolean isFound = false;
-		for (QuadMSQ quad : listMsqs) {
-			if (quad.getMicroService() == m) 
-				isFound = true;
-				while (quad.getMessageQueue().isEmpty()) {
-					try {
-						this.wait();
-					}
-					catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-					}
-				}
-				return (Message)quad.getMessageQueue().poll();
-		}
-		if (!isFound) {
+		Message msg = null;
+		if (!msqMap.contains(m)) {
 			throw new IllegalStateException();
 		}
-		return null;
+		if (msqMap.get(m).isEmpty()) {
+			try {
+				this.wait();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+		msg = msqMap.get(m).poll();
+		return msg;
 	}
 }
