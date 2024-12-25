@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.TickBroadcast;
 
 /**
  * TimeService acts as the global timer for the system, broadcasting TickBroadcast messages
@@ -14,9 +15,12 @@ public class TimeService extends MicroService {
      * @param TickTime  The duration of each tick in milliseconds.
      * @param Duration  The total number of ticks before the service terminates.
      */
+    private long tickTime;
+    private long duration;
     public TimeService(int TickTime, int Duration) {
         super("Change_This_Name");
-        // TODO Implement this
+        this.tickTime = TickTime;
+        this.duration = Duration;
     }
 
     /**
@@ -25,6 +29,16 @@ public class TimeService extends MicroService {
      */
     @Override
     protected void initialize() {
-        // TODO Implement this
+        try {
+        for (int tick = 1; tick <= duration; tick++) {
+            Thread.sleep(tickTime);
+            sendBroadcast(new TickBroadcast());
+        }
+        sendBroadcast(new TerminateBroadcast());  
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    } finally {
+        terminate(); s
+    }
     }
 }

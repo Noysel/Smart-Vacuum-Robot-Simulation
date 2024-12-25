@@ -9,19 +9,27 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
+ * The {@link MessageBusImpl class is the implementation of the MessageBus
+ * interface.
  * Write your implementation here!
- * Only one public method (in addition to getters which can be public solely for unit testing) may be added to this class
+ * Only one public method (in addition to getters which can be public solely for
+ * unit testing) may be added to this class
  * All other methods and members you add the class must be private.
  */
 public class MessageBusImpl implements MessageBus {
-	
+
 	private ConcurrentHashMap<MicroService, ConcurrentLinkedQueue<Message>> msqMap;
 	private ConcurrentHashMap<MicroService, List<Queue<MicroService>>> refMap;
 	private ConcurrentHashMap<Class<? extends Message>, ConcurrentLinkedQueue<MicroService>> subMessageMap;
-	private ConcurrentHashMap<Event, Future> eventFutureMap;
+	private ConcurrentHashMap<Event<?>, Future<?>> eventFutureMap;
 
-	private int nextIndex;
+	private static class Holder {
+		private static MessageBusImpl instance = new MessageBusImpl();
+	}
+
+	public static MessageBusImpl getInstance() {
+		return Holder.instance;
+	}
 
 	public MessageBusImpl() {
 		msqMap = new ConcurrentHashMap<>();
@@ -46,7 +54,10 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public <T> void complete(Event<T> e, T result) {
-		eventFutureMap.get(e).resolve(result);
+		Future<T> future = (Future<T>) eventFutureMap.get(e);
+		if (future != null) {
+			future.resolve(result);
+		}
 	}
 
 	@Override
@@ -59,22 +70,22 @@ public class MessageBusImpl implements MessageBus {
 			notifyAll();
 		}
 	}
-	
+
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		
+
 		Queue<MicroService> q = subMessageMap.get(e);
 		if (q.isEmpty()) {
 			return null;
 		}
 		MicroService ms = q.poll();
 		msqMap.get(ms).add(e);
-		q.add(ms); //Ensures that the order of MS will be according to Round Robbin
+		q.add(ms); // Ensures that the order of MS will be according to Round Robbin
 		Future<T> future = new Future<>();
 		eventFutureMap.put(e, future);
 		notifyAll();
 		return future;
-		
+
 	}
 
 	@Override
@@ -83,7 +94,7 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
-	public void unregister(MicroService m) { 
+	public void unregister(MicroService m) {
 		List<Queue<MicroService>> listOfPointers = refMap.get(m);
 		for (Queue<MicroService> q : listOfPointers) {
 			q.remove(m);
@@ -100,8 +111,7 @@ public class MessageBusImpl implements MessageBus {
 		if (msqMap.get(m).isEmpty()) {
 			try {
 				this.wait();
-			}
-			catch (InterruptedException e) {
+			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
 		}

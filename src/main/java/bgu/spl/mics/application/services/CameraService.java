@@ -16,9 +16,11 @@ public class CameraService extends MicroService {
      *
      * @param camera The Camera object that this service will use to detect objects.
      */
+
+    private Camera camera;
     public CameraService(Camera camera) {
         super("Change_This_Name");
-        // TODO Implement this
+        this.camera = camera;
     }
 
     /**
@@ -28,6 +30,6 @@ public class CameraService extends MicroService {
      */
     @Override
     protected void initialize() {
-        // TODO Implement this
+        this.subscribeBroadcast();
     }
 }
