@@ -1,6 +1,10 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.TerminateBroadcast;
+import bgu.spl.mics.TickBroadcast;
+import bgu.spl.mics.application.objects.LiDarWorkerTracker;
 
 /**
  * LiDarService is responsible for processing data from the LiDAR sensor and
@@ -17,9 +21,10 @@ public class LiDarService extends MicroService {
      *
      * @param LiDarWorkerTracker A LiDAR Tracker worker object that this service will use to process data.
      */
+    private LiDarWorkerTracker liDar;
     public LiDarService(LiDarWorkerTracker LiDarWorkerTracker) {
-        super("Change_This_Name");
-        // TODO Implement this
+        super("LidarService");
+        liDar = LiDarWorkerTracker;
     }
 
     /**
@@ -29,6 +34,17 @@ public class LiDarService extends MicroService {
      */
     @Override
     protected void initialize() {
-        // TODO Implement this
-    }
+        subscribeBroadcast(TickBroadcast.class, TrackedObjectsEvents -> {
+            this.sendEvent(new TrackedObjectEvent<>()); // CHECK WHAT TO DO
+        });
+        subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
+            this.terminate();
+        });
+        subscribeBroadcast(CrashedBroadcast.class, Terminate -> {
+            this.terminate(); // CHECK
+        });
+        subscribeEvent(DetectObjectEvent.class, TrackedObjectsEvents -> {
+            this.sendEvent(new TrackedObjectEvent<>());
+        });
+}
 }

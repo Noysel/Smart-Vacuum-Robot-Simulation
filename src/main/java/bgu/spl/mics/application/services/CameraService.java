@@ -1,7 +1,12 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.Broadcast;
+import bgu.spl.mics.Callback;
+import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.TerminateBroadcast;
+import bgu.spl.mics.TickBroadcast;
+import bgu.spl.mics.application.objects.Camera;
 
 /**
  * CameraService is responsible for processing data from the camera and
@@ -20,7 +25,7 @@ public class CameraService extends MicroService {
 
     private Camera camera;
     public CameraService(Camera camera) {
-        super("Change_This_Name");
+        super("CameraService");
         this.camera = camera;
     }
 
@@ -31,6 +36,14 @@ public class CameraService extends MicroService {
      */
     @Override
     protected void initialize() {
-        this.subscribeBroadcast(, null);
+        subscribeBroadcast(TickBroadcast.class, DetectOjbectsEvents -> {
+            this.sendEvent(new DetectObjectEvent<>());
+        });
+        this.subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
+            this.terminate();
+        });
+        this.subscribeBroadcast(CrashedBroadcast.class, Terminate -> {
+            this.terminate(); // CHECK TO TERMINATE
+        });
     }
 }

@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.TerminateBroadcast;
 import bgu.spl.mics.TickBroadcast;
 
 /**
@@ -18,7 +19,7 @@ public class TimeService extends MicroService {
     private long tickTime;
     private long duration;
     public TimeService(int TickTime, int Duration) {
-        super("Change_This_Name");
+        super("TimeService");
         this.tickTime = TickTime;
         this.duration = Duration;
     }
@@ -38,7 +39,7 @@ public class TimeService extends MicroService {
     } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
     } finally {
-        terminate(); s
+        terminate(); 
     }
     }
 }

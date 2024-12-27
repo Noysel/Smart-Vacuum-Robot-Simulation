@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus
@@ -18,9 +20,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class MessageBusImpl implements MessageBus {
 
-	private ConcurrentHashMap<MicroService, ConcurrentLinkedQueue<Message>> msqMap;
+	private ConcurrentHashMap<MicroService, BlockingQueue<Message>> msqMap;
 	private ConcurrentHashMap<MicroService, List<Queue<MicroService>>> refMap;
-	private ConcurrentHashMap<Class<? extends Message>, ConcurrentLinkedQueue<MicroService>> subMessageMap;
+	private ConcurrentHashMap<Class<? extends Message>, BlockingQueue<MicroService>> subMessageMap;
 	private ConcurrentHashMap<Event<?>, Future<?>> eventFutureMap;
 
 	private static class Holder {
@@ -41,13 +43,13 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		subMessageMap.computeIfAbsent(type, placeHolder -> new ConcurrentLinkedQueue<>()).add(m);
+		subMessageMap.computeIfAbsent(type, placeHolder -> new LinkedBlockingQueue<>()).add(m);
 		refMap.computeIfAbsent(m, placeHolder -> new CopyOnWriteArrayList<>()).add(subMessageMap.get(type));
 	}
 
 	@Override
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		subMessageMap.computeIfAbsent(type, placeHolder -> new ConcurrentLinkedQueue<>()).add(m);
+		subMessageMap.computeIfAbsent(type, placeHolder -> new LinkedBlockingQueue<>()).add(m);
 		refMap.computeIfAbsent(m, placeHolder -> new CopyOnWriteArrayList<>()).add(subMessageMap.get(type));
 
 	}
@@ -62,35 +64,34 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		Queue<MicroService> q = subMessageMap.get(b);
-		if (!q.isEmpty()) {
-			for (MicroService ms : q) {
-				msqMap.get(ms).add(b);
-			}
-			notifyAll();
+		BlockingQueue<MicroService> qMS = subMessageMap.get(b);
+		if (!qMS.isEmpty()) {
+			for (MicroService ms : qMS) {
+				BlockingQueue<Message> qMessages = msqMap.get(ms);
+                qMessages.add(b);
+            }
 		}
 	}
 
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
 
-		Queue<MicroService> q = subMessageMap.get(e);
-		if (q.isEmpty()) {
+		BlockingQueue<MicroService> qMS = subMessageMap.get(e);
+		if (qMS.isEmpty()) {
 			return null;
 		}
-		MicroService ms = q.poll();
+		MicroService ms = qMS.poll();
 		msqMap.get(ms).add(e);
-		q.add(ms); // Ensures that the order of MS will be according to Round Robbin
+		qMS.add(ms); // Ensures that the order of MS will be according to Round Robbin
 		Future<T> future = new Future<>();
 		eventFutureMap.put(e, future);
-		notifyAll();
 		return future;
 
 	}
 
 	@Override
 	public void register(MicroService m) {
-		msqMap.put(m, new ConcurrentLinkedQueue<>());
+		msqMap.put(m, new LinkedBlockingQueue<>());
 	}
 
 	@Override
@@ -104,18 +105,10 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		Message msg = null;
 		if (!msqMap.contains(m)) {
 			throw new IllegalStateException();
 		}
-		if (msqMap.get(m).isEmpty()) {
-			try {
-				this.wait();
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
-		}
-		msg = msqMap.get(m).poll();
-		return msg;
+		BlockingQueue<Message> queue = msqMap.get(m);
+		return queue.take(); // This will block until a message is available
 	}
 }
