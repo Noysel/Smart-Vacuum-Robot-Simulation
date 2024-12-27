@@ -168,8 +168,6 @@ public abstract class MicroService implements Runnable {
                 Message msg = messageBus.awaitMessage(this);
                 Callback cb = msgCBMap.get(msg);
                 cb.call(msg);
-                
-
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

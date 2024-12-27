@@ -1,5 +1,6 @@
 package bgu.spl.mics;
 
-public class TickBroadcast {
+public class TickBroadcast implements Broadcast {
+    
 
 }

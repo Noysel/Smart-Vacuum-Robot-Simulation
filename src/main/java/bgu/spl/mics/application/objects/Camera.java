@@ -16,4 +16,8 @@ public class Camera {
     private Status status;
     private List<DetectedObject> detectedObjectsList;
 
+    public Camera() {
+        
+    }
+
 }

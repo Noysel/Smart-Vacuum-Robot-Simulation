@@ -1,5 +1,6 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Broadcast;
 import bgu.spl.mics.MicroService;
 
 /**
@@ -30,6 +31,6 @@ public class CameraService extends MicroService {
      */
     @Override
     protected void initialize() {
-        this.subscribeBroadcast();
+        this.subscribeBroadcast(, null);
     }
 }
