@@ -1,5 +1,7 @@
 package bgu.spl.mics.application.services;
 
+import java.util.concurrent.TimeUnit;
+import bgu.spl.mics.Future;
 import bgu.spl.mics.Broadcast;
 import bgu.spl.mics.Callback;
 import bgu.spl.mics.DetectObjectEvent;
@@ -7,6 +9,9 @@ import bgu.spl.mics.MicroService;
 import bgu.spl.mics.TerminateBroadcast;
 import bgu.spl.mics.TickBroadcast;
 import bgu.spl.mics.application.objects.Camera;
+import bgu.spl.mics.application.objects.DetectedObject;
+import bgu.spl.mics.application.objects.StampedDetectedObjects;
+import bgu.spl.mics.application.objects.TrackedObject;
 
 /**
  * CameraService is responsible for processing data from the camera and
@@ -24,9 +29,11 @@ public class CameraService extends MicroService {
      */
 
     private Camera camera;
+    private int time;
     public CameraService(Camera camera) {
         super("CameraService");
         this.camera = camera;
+        time = 0;
     }
 
     /**
@@ -37,7 +44,18 @@ public class CameraService extends MicroService {
     @Override
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, DetectOjbectsEvents -> {
-            this.sendEvent(new DetectObjectEvent<>());
+            time++;
+            StampedDetectedObjects stampedObj = camera.interval(time);
+            if (stampedObj != null) {
+                for (DetectedObject obj : stampedObj.getDetectedObjects()) {
+                    DetectObjectEvent ev = new DetectObjectEvent(obj);
+                    Future<TrackedObject> futureObj = sendEvent(ev); // CHECKK
+                    if (futureObj != null) {
+                        TrackedObject trackedObj = futureObj.get();
+                        complete(ev, trackedObj);
+                    }
+                }
+            }
         });
         this.subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             this.terminate();

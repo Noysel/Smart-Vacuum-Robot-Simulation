@@ -4,6 +4,7 @@ import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.TerminateBroadcast;
 import bgu.spl.mics.TickBroadcast;
+import bgu.spl.mics.application.objects.CloudPoint;
 import bgu.spl.mics.application.objects.LiDarWorkerTracker;
 
 /**
@@ -22,9 +23,11 @@ public class LiDarService extends MicroService {
      * @param LiDarWorkerTracker A LiDAR Tracker worker object that this service will use to process data.
      */
     private LiDarWorkerTracker liDar;
+    private int time;
     public LiDarService(LiDarWorkerTracker LiDarWorkerTracker) {
         super("LidarService");
         liDar = LiDarWorkerTracker;
+        time = 0;
     }
 
     /**
@@ -34,8 +37,8 @@ public class LiDarService extends MicroService {
      */
     @Override
     protected void initialize() {
-        subscribeBroadcast(TickBroadcast.class, TrackedObjectsEvents -> {
-            this.sendEvent(new TrackedObjectEvent<>()); // CHECK WHAT TO DO.
+        subscribeBroadcast(TickBroadcast.class, Tick -> {
+            time++;
         });
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             this.terminate();
@@ -44,6 +47,7 @@ public class LiDarService extends MicroService {
             this.terminate(); // CHECK
         });
         subscribeEvent(DetectObjectEvent.class, TrackedObjectsEvents -> {
+            if (time + frequency)
             this.sendEvent(new TrackedObjectEvent<>());
         });
 }

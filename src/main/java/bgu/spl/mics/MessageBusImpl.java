@@ -26,7 +26,7 @@ public class MessageBusImpl implements MessageBus {
 	private ConcurrentHashMap<Event<?>, Future<?>> eventFutureMap;
 
 	private static class SingletonHolder {
-		private static MessageBusImpl instance = new MessageBusImpl();
+		private volatile static MessageBusImpl instance = new MessageBusImpl();
 	}
 
 	public static MessageBusImpl getInstance() {

@@ -15,9 +15,11 @@ public class FusionSlamService extends MicroService {
      *
      * @param fusionSlam The FusionSLAM object responsible for managing the global map.
      */
+    private fusionSlam fs;
+
     public FusionSlamService(FusionSlam fusionSlam) {
-        super("Change_This_Name");
-        // TODO Implement this.
+        super("FusionSlamService");
+        this.fs = fusionSlam;
     }
 
     /**
