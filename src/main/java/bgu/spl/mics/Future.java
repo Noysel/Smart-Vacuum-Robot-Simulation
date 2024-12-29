@@ -72,7 +72,7 @@ public class Future<T> {
 				this.wait(unit.toMillis(timeout));
 			}
 			catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+				Thread.currentThread().interrupt(); 
 			}
 		}
 		return result;

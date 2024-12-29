@@ -6,11 +6,11 @@ import bgu.spl.mics.application.objects.TrackedObject;
 
 public class TrackedObjectEvent implements Event<LandMark> {
 
-    private TrackedObject obj;
-    public TrackedObjectEvent(TrackedObject obj) {
+    private DetectedObject obj;
+    public TrackedObjectEvent(DetectedObject obj) {
         this.obj = obj;
     }
-    public TrackedObject getTrackedObject() {
+    public DetectedObject getTrackedObject() {
         return obj;
     }
 

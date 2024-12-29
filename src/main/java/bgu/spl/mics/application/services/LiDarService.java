@@ -47,7 +47,7 @@ public class LiDarService extends MicroService {
             this.terminate(); // CHECK
         });
         subscribeEvent(DetectObjectEvent.class, TrackedObjectsEvents -> {
-            if (time + frequency)
+            if (time + liDar.frequency == )
             this.sendEvent(new TrackedObjectEvent<>());
         });
 }

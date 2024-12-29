@@ -15,7 +15,7 @@ public class LiDarDataParser {
       public static List<StampedCloudPoints> parseLidarData(String filePath) {
         Gson gson = new Gson();
         try (FileReader reader = new FileReader(filePath)) {
-            Type listType = new TypeToken<List<TrackedObject>>(){}.getType();
+            Type listType = new TypeToken<List<StampedCloudPoints>>(){}.getType();
             return gson.fromJson(reader, listType);
         } catch (IOException e) {
             e.printStackTrace();

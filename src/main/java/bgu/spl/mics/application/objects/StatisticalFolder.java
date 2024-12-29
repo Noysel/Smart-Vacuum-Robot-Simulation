@@ -6,5 +6,17 @@ package bgu.spl.mics.application.objects;
  * the number of objects detected and tracked, and the number of landmarks identified.
  */
 public class StatisticalFolder {
-    // TODO: Define fields and methods for statistics tracking.
+    private int systemRunTime;
+    private int numDetectedObjects;
+    private int numTrackedObjects;
+    private int numLandMarks;
+
+    public StatisticalFolder(int systemRunTime, int numDetectedObjects, int numTrackedObjects, int numLandMarks){
+        this.systemRunTime = systemRunTime;
+        this.numDetectedObjects = numDetectedObjects;
+        this.numTrackedObjects = numTrackedObjects;
+        this.numLandMarks = numLandMarks;
+    }
+    
+
 }

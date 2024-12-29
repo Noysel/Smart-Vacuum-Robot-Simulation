@@ -1,4 +1,5 @@
 package bgu.spl.mics.application.objects;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,9 +18,10 @@ public class FusionSlam {
 
     private List<LandMark> landMarks;
     private List<Pose> poses;
-        private static class SingletonHolder {
-            private static FusionSlam instance = new FusionSlam();
-        }
+
+    private static class SingletonHolder {
+        private static FusionSlam instance = new FusionSlam();
+    }
 
     public static FusionSlam getInstance() {
         return SingletonHolder.instance;
@@ -30,11 +32,9 @@ public class FusionSlam {
         this.poses = new LinkedList<>();
     }
 
-    
-
     public FusionSlam(List<LandMark> landMarks, List<Pose> poses) {
         this.landMarks = landMarks;
         this.poses = poses;
     }
-    
+
 }
