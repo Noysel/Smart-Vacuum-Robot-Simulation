@@ -25,12 +25,12 @@ public class MessageBusImpl implements MessageBus {
 	private ConcurrentHashMap<Class<? extends Message>, BlockingQueue<MicroService>> subMessageMap;
 	private ConcurrentHashMap<Event<?>, Future<?>> eventFutureMap;
 
-	private static class Holder {
+	private static class SingletonHolder {
 		private static MessageBusImpl instance = new MessageBusImpl();
 	}
 
 	public static MessageBusImpl getInstance() {
-		return Holder.instance;
+		return SingletonHolder.instance;
 	}
 
 	public MessageBusImpl() {
@@ -109,6 +109,6 @@ public class MessageBusImpl implements MessageBus {
 			throw new IllegalStateException();
 		}
 		BlockingQueue<Message> queue = msqMap.get(m);
-		return queue.take(); // This will block until a message is available
+		return queue.take(); // This will block until a message is available.
 	}
 }

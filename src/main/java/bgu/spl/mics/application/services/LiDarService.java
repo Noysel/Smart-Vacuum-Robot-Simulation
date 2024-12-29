@@ -35,7 +35,7 @@ public class LiDarService extends MicroService {
     @Override
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, TrackedObjectsEvents -> {
-            this.sendEvent(new TrackedObjectEvent<>()); // CHECK WHAT TO DO
+            this.sendEvent(new TrackedObjectEvent<>()); // CHECK WHAT TO DO.
         });
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             this.terminate();

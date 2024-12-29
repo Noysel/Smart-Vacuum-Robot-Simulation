@@ -43,7 +43,7 @@ public class CameraService extends MicroService {
             this.terminate();
         });
         this.subscribeBroadcast(CrashedBroadcast.class, Terminate -> {
-            this.terminate(); // CHECK TO TERMINATE
+            this.terminate(); // CHECK TO TERMINATE.
         });
     }
 }

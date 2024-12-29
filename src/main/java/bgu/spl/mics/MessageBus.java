@@ -90,8 +90,8 @@ public interface MessageBus {
      *          queue.
      * @return The next message in the {@code m}'s queue (blocking).
      * @throws InterruptedException if interrupted while waiting for a message
-     *                              to became available.
+     *                              to became available..
      */
-    Message awaitMessage(MicroService m) throws InterruptedException;
+    Message awaitMessage(MicroService m) throws InterruptedException; 
     
 }
