@@ -1,6 +1,5 @@
 package bgu.spl.mics.application.services;
-import java.util.List;;
-
+import java.util.List;
 import bgu.spl.mics.Callback;
 import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
@@ -10,6 +9,11 @@ import bgu.spl.mics.application.objects.CloudPoint;
 import bgu.spl.mics.application.objects.LiDarDataBase;
 import bgu.spl.mics.application.objects.LiDarWorkerTracker;
 import bgu.spl.mics.application.objects.StampedCloudPoints;
+import bgu.spl.mics.application.objects.TrackedObject;
+import bgu.spl.mics.Future;
+import bgu.spl.mics.application.objects.LandMark;
+
+
 
 /**
  * LiDarService is responsible for processing data from the LiDAR sensor and
@@ -43,6 +47,10 @@ public class LiDarService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
             timeTick = tickBroadcast.getTime();
+            List<TrackedObject> listTracked = liDar.CheckIfTimed(timeTick);
+            if (listTracked != null){
+                Future<LandMark> future = sendEvent(new TrackedObjectEvent(listTracked));
+            }
         });
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             this.terminate();
