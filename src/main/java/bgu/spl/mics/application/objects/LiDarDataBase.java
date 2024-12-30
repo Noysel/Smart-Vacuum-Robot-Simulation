@@ -26,7 +26,7 @@ public class LiDarDataBase {
 
     public static LiDarDataBase getInstance(String filePath) {
         SingletonHolder.instance.init(filePath);
-        return null;
+        return SingletonHolder.instance;
     }
 
     private void init(String filePath) {

@@ -13,11 +13,11 @@ public class TrackedObject {
     private String description;
     private List<CloudPoint> coordinates;
 
-    public TrackedObject(String ID, int time, String description) {
+    public TrackedObject(String ID, int time, String description, List<CloudPoint> coordinates) {
         this.ID = ID;
         this.time = time;
         this.description = description;
-        List<CloudPoint> coordinates = new LinkedList<>();
+        this.coordinates = coordinates;
     }
     public String getID() {
         return ID;

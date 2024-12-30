@@ -2,6 +2,8 @@ package bgu.spl.mics.application.objects;
 import bgu.spl.mics.application.objects.TrackedObject;
 import java.util.List;
 import java.util.LinkedList;
+import bgu.spl.mics.DetectObjectEvent;
+import bgu.spl.mics.application.objects.StampedDetectedObjects;
 
 /**
  * LiDarWorkerTracker is responsible for managing a LiDAR worker.
@@ -40,14 +42,17 @@ public class LiDarWorkerTracker {
     public List<TrackedObject> getLastTrDetectedObjects() {
         return this.lastTrackedObjects;
     }
-    public StampedCloudPoints interval(int tickTime){
+    public StampedCloudPoints interval(int tickTime, StampedDetectedObjects stampedObj){
         for (StampedCloudPoints obj : allObj) {
             if (tickTime < obj.getTime() + frequency) {
+                //INSERT TO A LIST 
                 break;
             }
             else {
-                lastTrackedObjects.add(obj);
-                allObj.remove(obj);
+                for (DetectedObject detObj : stampedObj.getDetectedObjects()){
+                    TrackedObject trObj = new TrackedObject(obj.getID(), obj.getTime(), detObj.getDescription(), obj.geCloudPoints());
+                    lastTrackedObjects.add(trObj);
+                }
                 return obj;
             }
         }
