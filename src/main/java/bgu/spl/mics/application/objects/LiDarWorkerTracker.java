@@ -18,11 +18,14 @@ public class LiDarWorkerTracker {
     private int frequency;
     private Status status;
     private List<TrackedObject> lastTrackedObjects;
+    private List<StampedCloudPoints> allObj;
     public LiDarWorkerTracker(int ID, int frequency, Status status) {
         this.ID = ID;
         this.frequency = frequency;
         this.status = status;
         this.lastTrackedObjects = new LinkedList<TrackedObject>();
+        this.allObj = LiDarDataBase.getInstance("lidar_data.json").getStampedCloudPoints();
+
     }
 
     public int getID() {
@@ -36,6 +39,19 @@ public class LiDarWorkerTracker {
     }
     public List<TrackedObject> getLastTrDetectedObjects() {
         return this.lastTrackedObjects;
+    }
+    public StampedCloudPoints interval(int tickTime){
+        for (StampedCloudPoints obj : allObj) {
+            if (tickTime < obj.getTime() + frequency) {
+                break;
+            }
+            else {
+                lastTrackedObjects.add(obj);
+                allObj.remove(obj);
+                return obj;
+            }
+        }
+        return null;
     }
 
 }

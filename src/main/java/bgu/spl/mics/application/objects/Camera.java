@@ -39,10 +39,15 @@ public class Camera {
         return this.detectedObjectsList;
     }
 
-    public StampedDetectedObjects interval(int time) {
+    public StampedDetectedObjects interval(int tickTime) {
         for (StampedDetectedObjects obj : allObjects) {
-            if (obj.getTime() == time + frequency) {
+            if (tickTime < obj.getTime() + frequency) {
+                break;
+            }
+            else {
+                if (tickTime == obj.getTime() + frequency)
                 detectedObjectsList.add(obj);
+                allObjects.remove(obj);
                 return obj;
             }
         }

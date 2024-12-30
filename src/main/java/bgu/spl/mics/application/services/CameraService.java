@@ -29,33 +29,31 @@ public class CameraService extends MicroService {
      */
 
     private Camera camera;
-    private int time;
+
     public CameraService(Camera camera) {
         super("CameraService");
         this.camera = camera;
-        time = 0;
     }
 
     /**
      * Initializes the CameraService.
-     * Registers the service to handle TickBroadcasts and sets up callbacks for sending
+     * Registers the service to handle TickBroadcasts and sets up callbacks for
+     * sending
      * DetectObjectsEvents.
      */
     @Override
     protected void initialize() {
-        subscribeBroadcast(TickBroadcast.class, DetectOjbectsEvents -> {
-            time++;
-            StampedDetectedObjects stampedObj = camera.interval(time);
+        subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
+            int currentTime = tickBroadcast.getTime();
+            StampedDetectedObjects stampedObj = camera.interval(currentTime);
             if (stampedObj != null) {
-                for (DetectedObject obj : stampedObj.getDetectedObjects()) {
-                    DetectObjectEvent ev = new DetectObjectEvent(obj);
-                    Future<TrackedObject> futureObj = sendEvent(ev); // CHECKK
+                    DetectObjectEvent ev = new DetectObjectEvent(stampedObj);
+                    Future<Boolean> futureObj = sendEvent(ev);
                     if (futureObj != null) {
-                        TrackedObject trackedObj = futureObj.get();
-                        complete(ev, trackedObj);
+                            complete(ev, futureObj.get());
                     }
                 }
-            }
+            
         });
         this.subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             this.terminate();

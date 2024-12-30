@@ -34,4 +34,8 @@ public class LiDarDataBase {
             cloudPoints = LiDarDataParser.parseLidarData(filePath);
         }
     }
+
+    public List<StampedCloudPoints> getStampedCloudPoints() {
+        return cloudPoints;
+    }
 }

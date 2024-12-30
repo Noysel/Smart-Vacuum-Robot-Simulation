@@ -1,11 +1,15 @@
 package bgu.spl.mics.application.services;
+import java.util.List;;
 
+import bgu.spl.mics.Callback;
 import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.TerminateBroadcast;
 import bgu.spl.mics.TickBroadcast;
 import bgu.spl.mics.application.objects.CloudPoint;
+import bgu.spl.mics.application.objects.LiDarDataBase;
 import bgu.spl.mics.application.objects.LiDarWorkerTracker;
+import bgu.spl.mics.application.objects.StampedCloudPoints;
 
 /**
  * LiDarService is responsible for processing data from the LiDAR sensor and
@@ -23,11 +27,11 @@ public class LiDarService extends MicroService {
      * @param LiDarWorkerTracker A LiDAR Tracker worker object that this service will use to process data.
      */
     private LiDarWorkerTracker liDar;
-    private int time;
+    private int timeTick;
     public LiDarService(LiDarWorkerTracker LiDarWorkerTracker) {
         super("LidarService");
         liDar = LiDarWorkerTracker;
-        time = 0;
+        timeTick = 0;
     }
 
     /**
@@ -37,8 +41,8 @@ public class LiDarService extends MicroService {
      */
     @Override
     protected void initialize() {
-        subscribeBroadcast(TickBroadcast.class, Tick -> {
-            time++;
+        subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
+            timeTick = tickBroadcast.getTime();
         });
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             this.terminate();
@@ -47,8 +51,7 @@ public class LiDarService extends MicroService {
             this.terminate(); // CHECK..
         });
         subscribeEvent(DetectObjectEvent.class, TrackedObjectsEvents -> {
-            if (time + liDar.frequency == )
-            this.sendEvent(new TrackedObjectEvent<>());
+            
         });
 }
 }
