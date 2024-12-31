@@ -58,7 +58,7 @@ public class LiDarService extends MicroService {
                         complete(detEvent, true);
                     }
                 }
-                Future<LandMark> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
+                Future<Boolean> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
                 if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) { // CHECK
                     System.out.println("Time has elapsed, no services has resolved the event - terminating");
                         terminate();
@@ -74,7 +74,7 @@ public class LiDarService extends MicroService {
         subscribeEvent(DetectObjectEvent.class, DetectedObjectsEvent -> {
             List<TrackedObject> listTracked = liDar.interval(timeTick, DetectedObjectsEvent);
             if (listTracked != null){
-                Future<LandMark> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
+                Future<Boolean> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
                 DetectedObjectsEvent.complete();
                 complete(DetectedObjectsEvent, true);
                  if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) { // CHECK

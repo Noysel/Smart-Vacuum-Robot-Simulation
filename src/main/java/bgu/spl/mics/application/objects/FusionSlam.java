@@ -43,6 +43,14 @@ public class FusionSlam {
         this.currentPose = null;
     }
 
+    public void setTime(int tickTime) {
+        time = tickTime;
+    }
+
+    public void setCurrentPose(Pose pose) {
+        currentPose = pose;
+    }
+
     public CloudPoint ConvertCoordinates(CloudPoint coordinates) {
         double radYaw = Math.toRadians(currentPose.getYaw());
         double cosYaw = Math.cos(radYaw);
@@ -55,14 +63,27 @@ public class FusionSlam {
     public void insertLandMark(TrackedObject trackedObj) {
 
         List<CloudPoint> globalCoordinates = new LinkedList<>();
+        boolean isFound = false;
         for (CloudPoint point : trackedObj.getCoordinates()) {
             globalCoordinates.add(ConvertCoordinates(point));
+        } 
+        for (LandMark landMark : landMarks) {
+            if (trackedObj.getID() == landMark.getID()) {
+                for (int i = 0; i<globalCoordinates.size(); i++){
+                    CloudPoint trackedP = globalCoordinates.get(i);
+                    CloudPoint landMarkP = landMark.getCoordinates().get(i);
+                    double landMarkX = landMarkP.getX();
+                    double landMarkY = landMarkP.getY();
+                    landMarkP.setX((landMarkX*landMark.getUpdateNum()+trackedP.getX())/(landMark.getUpdateNum()+1));
+                    landMarkP.setY((landMarkY*landMark.getUpdateNum()+trackedP.getY())/(landMark.getUpdateNum()+1));
+                }
+                landMark.increaseUpdateNum();
+                isFound = true;
+                break;
+            }
         }
-        if (!landMarks.contains(trackedObj)) {
+        if (!isFound) {
             landMarks.add(new LandMark(trackedObj.getID(), trackedObj.getDescription(), globalCoordinates));
-        }
-        else {
-            //complete
         }
 
     }

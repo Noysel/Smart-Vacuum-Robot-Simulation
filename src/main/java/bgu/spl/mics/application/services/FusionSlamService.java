@@ -4,6 +4,8 @@ import bgu.spl.mics.MicroService;
 import bgu.spl.mics.TerminateBroadcast;
 import bgu.spl.mics.TickBroadcast;
 import bgu.spl.mics.application.objects.FusionSlam;
+import java.util.List;
+import bgu.spl.mics.application.objects.TrackedObject;
 
 /**
  * FusionSlamService integrates data from multiple sensors to build and update
@@ -33,8 +35,8 @@ public class FusionSlamService extends MicroService {
      */
     @Override
     protected void initialize() {
-        subscribeBroadcast(TickBroadcast.class, TrackedObjectsEvents -> {
-            //??
+        subscribeBroadcast(TickBroadcast.class, timeEvent -> {
+            fs.setTime(timeEvent.getTime());
         });
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             terminate();
@@ -45,11 +47,15 @@ public class FusionSlamService extends MicroService {
         });
 
         subscribeEvent(PoseEvent.class, poseEvent -> {
-
+            fs.setCurrentPose(poseEvent.getPose());
         });
 
-        subscribeEvent(TrackedObjectEvent.class, TrackedObjectsEvents -> {
-            //??
+        subscribeEvent(TrackedObjectEvent.class, trackedObjectsEvent -> {
+            List<TrackedObject> trackedObjList = trackedObjectsEvent.getTrackedObjectList();
+            for (TrackedObject trackedObj : trackedObjList){
+                fs.insertLandMark(trackedObj);
+            }
+            complete(trackedObjectsEvent, true);
         });
 
         

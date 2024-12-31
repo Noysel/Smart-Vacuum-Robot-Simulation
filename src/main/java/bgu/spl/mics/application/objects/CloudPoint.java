@@ -25,4 +25,12 @@ public class CloudPoint {
     public double getZ() {
         return z;
     }
+
+    public void setX(double newX) {
+        x = newX;
+    }
+
+    public void setY(double newY) {
+        x = newY;
+    }
 }

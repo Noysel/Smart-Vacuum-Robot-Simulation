@@ -5,7 +5,7 @@ import bgu.spl.mics.application.objects.LandMark;
 import bgu.spl.mics.application.objects.TrackedObject;
 import java.util.List;
 
-public class TrackedObjectEvent implements Event<LandMark> {
+public class TrackedObjectEvent implements Event<Boolean> {
 
     private List<TrackedObject> listOfTracked;
     public TrackedObjectEvent(List<TrackedObject> listOfTracked) {
