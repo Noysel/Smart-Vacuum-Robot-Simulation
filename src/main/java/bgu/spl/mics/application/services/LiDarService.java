@@ -1,5 +1,7 @@
 package bgu.spl.mics.application.services;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import bgu.spl.mics.Callback;
 import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
@@ -49,7 +51,18 @@ public class LiDarService extends MicroService {
             timeTick = tickBroadcast.getTime();
             List<TrackedObject> listTracked = liDar.CheckIfTimed(timeTick);
             if (listTracked != null){
-                Future<LandMark> future = sendEvent(new TrackedObjectEvent(listTracked));
+                for (TrackedObject trackedObj : listTracked) {
+                    DetectObjectEvent detEvent = trackedObj.getEvent();
+                    if (!detEvent.isCompleted()) {
+                        detEvent.complete();
+                        complete(detEvent, true);
+                    }
+                }
+                Future<LandMark> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
+                if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) { // CHECK
+                    System.out.println("Time has elapsed, no services has resolved the event - terminating");
+                        terminate();
+            }
             }
         });
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
@@ -58,8 +71,18 @@ public class LiDarService extends MicroService {
         subscribeBroadcast(CrashedBroadcast.class, Terminate -> {
             this.terminate(); // CHECK..
         });
-        subscribeEvent(DetectObjectEvent.class, TrackedObjectsEvents -> {
-            
+        subscribeEvent(DetectObjectEvent.class, DetectedObjectsEvent -> {
+            List<TrackedObject> listTracked = liDar.interval(timeTick, DetectedObjectsEvent);
+            if (listTracked != null){
+                Future<LandMark> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
+                DetectedObjectsEvent.complete();
+                complete(DetectedObjectsEvent, true);
+                 if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) { // CHECK
+                        System.out.println("Time has elapsed, no services has resolved the event - terminating");
+                            terminate();
+                }
+                // CHECK IF NEED TO DO SOMETHING IF ITS NOT NULL
+            }
         });
 }
 }

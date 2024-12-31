@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.TerminateBroadcast;
 import bgu.spl.mics.TickBroadcast;
 import bgu.spl.mics.application.objects.FusionSlam;
 
@@ -17,7 +18,7 @@ public class FusionSlamService extends MicroService {
      *
      * @param fusionSlam The FusionSLAM object responsible for managing the global map.
      */
-    private fusionSlam fs;
+    private FusionSlam fs;
 
     public FusionSlamService(FusionSlam fusionSlam) {
         super("FusionSlamService");
@@ -35,9 +36,22 @@ public class FusionSlamService extends MicroService {
         subscribeBroadcast(TickBroadcast.class, TrackedObjectsEvents -> {
             //??
         });
-        subscribeBroadcast(TrackedObjectEvent.class, TrackedObjectsEvents -> {
+        subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
+            terminate();
+        });
+
+        subscribeBroadcast(CrashedBroadcast.class, Crashed -> {
+            terminate();
+        });
+
+        subscribeEvent(PoseEvent.class, poseEvent -> {
+
+        });
+
+        subscribeEvent(TrackedObjectEvent.class, TrackedObjectsEvents -> {
             //??
         });
+
         
     }
 }
