@@ -75,7 +75,7 @@ public class LiDarService extends MicroService {
                 if (future.get(100, TimeUnit.MILLISECONDS) == null) { // CHECK
                         System.out.println("Time has elapsed, no services has resolved the event - terminating");
                             terminate();
-                    }
+                }
             }
 
         });
