@@ -33,7 +33,7 @@ public class TimeService extends MicroService {
         try {
         for (int tick = 1; tick <= duration; tick++) {
             Thread.sleep(tickTime);
-            sendBroadcast(new TickBroadcast());
+            sendBroadcast(new TickBroadcast(tick));
         }
         sendBroadcast(new TerminateBroadcast());  
     } catch (InterruptedException e) {

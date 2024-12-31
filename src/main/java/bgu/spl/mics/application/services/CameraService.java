@@ -49,8 +49,9 @@ public class CameraService extends MicroService {
             if (stampedObj != null) {
                     DetectObjectEvent ev = new DetectObjectEvent(stampedObj);
                     Future<Boolean> futureObj = sendEvent(ev);
-                    if (futureObj != null) {
-                            complete(ev, futureObj.get());
+                    if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
+                        System.out.println("Time has elapsed, no services has resolved the event - terminating");
+                            terminate();
                     }
                 }
             

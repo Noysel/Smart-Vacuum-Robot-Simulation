@@ -81,7 +81,7 @@ public class LiDarWorkerTracker {
             else {
                 LinkedList<TrackedObject> newLastTracked = new LinkedList<>();
                 for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
-                    if (detObj.getID() == obj.getID()) {
+                    if (detObj.getID() == obj.getID() && stampedObj.getTime() == obj.getTime()) {
                         TrackedObject trObj = new TrackedObject(obj.getID(), obj.getTime(), detObj.getDescription(), obj.geCloudPoints());
                         newLastTracked.add(trObj);
                         allObj.remove(obj);
