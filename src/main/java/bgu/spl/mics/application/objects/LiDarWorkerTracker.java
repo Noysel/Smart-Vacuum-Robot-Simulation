@@ -24,7 +24,7 @@ public class LiDarWorkerTracker {
     private Status status;
     private List<TrackedObject> lastTrackedObjects;
     private List<StampedCloudPoints> allObj;
-    private List<TrackedObject> notYetTO;
+    private List<DetectObjectEvent> notYetEvent;
 
     public LiDarWorkerTracker(int ID, int frequency, Status status) {
         this.ID = ID;
@@ -32,7 +32,7 @@ public class LiDarWorkerTracker {
         this.status = status;
         this.lastTrackedObjects = new LinkedList<TrackedObject>();
         this.allObj = LiDarDataBase.getInstance("lidar_data.json").getStampedCloudPoints();
-        this.notYetTO = new LinkedList<>();
+        this.notYetEvent = new LinkedList<>();
 
     }
 
@@ -52,28 +52,24 @@ public class LiDarWorkerTracker {
         return this.lastTrackedObjects;
     }
 
-    public List<TrackedObject> CheckIfTimed(int tickTime) {
-        LinkedList<TrackedObject> newLastTracked = new LinkedList<>();
-        for (TrackedObject trackedObj : notYetTO){
-            if (tickTime >= trackedObj.getTime() + frequency) {
-                
-                newLastTracked.add(trackedObj);
-                notYetTO.remove(trackedObj);
+    public List<DetectObjectEvent> getTimedEvents(int tickTime) {
+        List<DetectObjectEvent> output = new LinkedList<>();
+        for (DetectObjectEvent event : notYetEvent){
+            StampedDetectedObjects stampedObj = event.getDetectedObj();
+            if (tickTime >= stampedObj.getTime() + frequency) {
+                output.add(event);
             }
         }
-        if (newLastTracked != null){
-            lastTrackedObjects = newLastTracked;
-        }
-        return newLastTracked;
+        return output;
     }
 
-    public List<TrackedObject> interval(int tickTime, StampedDetectedObjects stampedObj) {
+    public List<TrackedObject> interval(int tickTime, DetectObjectEvent detectedObjEvent) {
+        StampedDetectedObjects stampedObj = detectedObjEvent.getDetectedObj();
         for (StampedCloudPoints obj : allObj) {
             if (tickTime < obj.getTime() + frequency) {
                 for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
                     if (detObj.getID() == obj.getID()) {
-                        TrackedObject trObj = new TrackedObject(obj.getID(), obj.getTime(), detObj.getDescription(), obj.geCloudPoints());
-                        notYetTO.add(trObj);
+                        notYetEvent.add(detectedObjEvent);
                         allObj.remove(obj);
                     }
                 }
@@ -81,7 +77,7 @@ public class LiDarWorkerTracker {
             else {
                 LinkedList<TrackedObject> newLastTracked = new LinkedList<>();
                 for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
-                    if (detObj.getID() == obj.getID() && stampedObj.getTime() == obj.getTime()) {
+                    if (detObj.getID() == obj.getID()) {
                         TrackedObject trObj = new TrackedObject(obj.getID(), obj.getTime(), detObj.getDescription(), obj.geCloudPoints());
                         newLastTracked.add(trObj);
                         allObj.remove(obj);
