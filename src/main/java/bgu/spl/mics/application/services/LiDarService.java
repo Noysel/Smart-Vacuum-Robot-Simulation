@@ -11,6 +11,7 @@ import bgu.spl.mics.application.objects.CloudPoint;
 import bgu.spl.mics.application.objects.LiDarDataBase;
 import bgu.spl.mics.application.objects.LiDarWorkerTracker;
 import bgu.spl.mics.application.objects.StampedCloudPoints;
+import bgu.spl.mics.application.objects.StatisticalFolder;
 import bgu.spl.mics.application.objects.TrackedObject;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.application.objects.LandMark;
@@ -34,10 +35,14 @@ public class LiDarService extends MicroService {
      */
     private LiDarWorkerTracker liDar;
     private int timeTick;
+    private StatisticalFolder statisticalFolder;
+
     public LiDarService(LiDarWorkerTracker LiDarWorkerTracker) {
         super("LidarService");
         liDar = LiDarWorkerTracker;
         timeTick = 0;
+        this.statisticalFolder = StatisticalFolder.getInstance();
+
     }
 
     /**
@@ -59,6 +64,7 @@ public class LiDarService extends MicroService {
                     }
                 }
                 Future<Boolean> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
+                statisticalFolder.increasenumTrackedObjects();
                 if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) { // CHECK
                     System.out.println("Time has elapsed, no services has resolved the event - terminating");
                         terminate();

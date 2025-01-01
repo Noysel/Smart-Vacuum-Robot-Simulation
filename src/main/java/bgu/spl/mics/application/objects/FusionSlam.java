@@ -2,6 +2,7 @@ package bgu.spl.mics.application.objects;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Iterator;
 
 import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.application.objects.FusionSlam.FusionSlamHolder.SingletonHolder;
@@ -49,43 +50,58 @@ public class FusionSlam {
 
     public void setCurrentPose(Pose pose) {
         currentPose = pose;
+        poses.add(pose);
+        notifyAll();
     }
 
-    public CloudPoint ConvertCoordinates(CloudPoint coordinates) {
-        double radYaw = Math.toRadians(currentPose.getYaw());
+    public CloudPoint ConvertCoordinates(CloudPoint coordinates, Pose Detectedpose) {
+        double radYaw = Math.toRadians(Detectedpose.getYaw());
         double cosYaw = Math.cos(radYaw);
         double sinYaw = Math.sin(cosYaw);
-        double xG = (cosYaw * coordinates.getX()) - (sinYaw * coordinates.getY()) + currentPose.getX();
-        double yG = (sinYaw * coordinates.getX()) + (cosYaw * coordinates.getY()) + currentPose.getY();
+        double xG = (cosYaw * coordinates.getX()) - (sinYaw * coordinates.getY()) + Detectedpose.getX();
+        double yG = (sinYaw * coordinates.getX()) + (cosYaw * coordinates.getY()) + Detectedpose.getY();
         return new CloudPoint(xG, yG);
     }
 
-    public void insertLandMark(TrackedObject trackedObj) {
-
+    public Boolean insertLandMark(TrackedObject trackedObj) { //return true if inserting new LandMark
         List<CloudPoint> globalCoordinates = new LinkedList<>();
-        boolean isFound = false;
-        for (CloudPoint point : trackedObj.getCoordinates()) {
-            globalCoordinates.add(ConvertCoordinates(point));
-        } 
-        for (LandMark landMark : landMarks) {
-            if (trackedObj.getID() == landMark.getID()) {
-                for (int i = 0; i<globalCoordinates.size(); i++){
-                    CloudPoint trackedP = globalCoordinates.get(i);
-                    CloudPoint landMarkP = landMark.getCoordinates().get(i);
-                    double landMarkX = landMarkP.getX();
-                    double landMarkY = landMarkP.getY();
-                    landMarkP.setX((landMarkX*landMark.getUpdateNum()+trackedP.getX())/(landMark.getUpdateNum()+1));
-                    landMarkP.setY((landMarkY*landMark.getUpdateNum()+trackedP.getY())/(landMark.getUpdateNum()+1));
+        while (currentPose.getTime() < trackedObj.getTime()) {
+            try {
+				this.wait();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+        }
+        for (Pose pose : poses) {
+            if (pose.getTime() == trackedObj.getTime()) {
+                for (CloudPoint point : trackedObj.getCoordinates()) {
+                    globalCoordinates.add(ConvertCoordinates(point, pose));
+                } 
+                for (LandMark landMark : landMarks) {
+                    if (trackedObj.getID() == landMark.getID()) {
+                        Iterator<CloudPoint> LMIterator = landMark.getCoordinates().iterator();
+                        Iterator<CloudPoint> GIterator = globalCoordinates.iterator();
+                        while (GIterator.hasNext()) {
+                            if (LMIterator.hasNext()) {
+                            CloudPoint trackedP = GIterator.next();
+                            CloudPoint landMarkP = LMIterator.next();
+                            double landMarkX = landMarkP.getX();
+                            double landMarkY = landMarkP.getY();
+                            landMarkP.setX((landMarkX+trackedP.getX())/2);
+                            landMarkP.setY((landMarkY+trackedP.getY())/2);
+                            }
+                            else {
+                                landMark.addCoordinates(GIterator.next());
+                            }
+                        }
+                        return false;
+                    }
                 }
-                landMark.increaseUpdateNum();
-                isFound = true;
-                break;
+                    landMarks.add(new LandMark(trackedObj.getID(), trackedObj.getDescription(), globalCoordinates));
+                    return true;
+                }
             }
         }
-        if (!isFound) {
-            landMarks.add(new LandMark(trackedObj.getID(), trackedObj.getDescription(), globalCoordinates));
-        }
-
     }
-
 }

@@ -9,14 +9,12 @@ import java.util.List;
 public class LandMark {
     private String ID;
     private String description;
-    private List<CloudPoint> coordinates;
-    private int updateNum;
+    private List<CloudPoint> coordinates;  
 
     public LandMark(String ID, String description, List<CloudPoint> coordinates) {
         this.ID = ID;
         this.description = description;
         this.coordinates = coordinates;
-        this.updateNum = 0;
     }
 
     public String getID() {
@@ -31,13 +29,8 @@ public class LandMark {
         return coordinates;
     }
 
-    public int getUpdateNum(){
-        return updateNum;
-    }
-
-    public void increaseUpdateNum() {
-        updateNum++;
-        //hhhiiii
+    public void addCoordinates(CloudPoint point){
+        coordinates.add(point);
     }
 
 }

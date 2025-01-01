@@ -11,6 +11,7 @@ import bgu.spl.mics.TickBroadcast;
 import bgu.spl.mics.application.objects.Camera;
 import bgu.spl.mics.application.objects.DetectedObject;
 import bgu.spl.mics.application.objects.StampedDetectedObjects;
+import bgu.spl.mics.application.objects.StatisticalFolder;
 import bgu.spl.mics.application.objects.TrackedObject;
 
 /**
@@ -29,10 +30,12 @@ public class CameraService extends MicroService {
      */
 
     private Camera camera;
+    private StatisticalFolder statisticalFolder;
 
     public CameraService(Camera camera) {
         super("CameraService");
         this.camera = camera;
+        this.statisticalFolder = StatisticalFolder.getInstance();
     }
 
     /**
@@ -49,6 +52,7 @@ public class CameraService extends MicroService {
             if (stampedObj != null) {
                     DetectObjectEvent ev = new DetectObjectEvent(stampedObj);
                     Future<Boolean> futureObj = sendEvent(ev);
+                    statisticalFolder.increasenumDetectedObjects();
                     if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
                         System.out.println("Time has elapsed, no services has resolved the event - terminating");
                             terminate();
