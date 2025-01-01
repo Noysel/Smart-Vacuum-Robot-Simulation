@@ -71,6 +71,7 @@ public class FusionSlam {
 			}
 			catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
+                ///
 			}
         }
         for (Pose pose : poses) {

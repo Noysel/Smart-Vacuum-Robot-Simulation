@@ -31,6 +31,7 @@ public class LandMark {
 
     public void addCoordinates(CloudPoint point){
         coordinates.add(point);
+        //
     }
 
 }

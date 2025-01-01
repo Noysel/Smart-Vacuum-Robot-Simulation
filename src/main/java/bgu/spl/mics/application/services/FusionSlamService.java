@@ -61,7 +61,7 @@ public class FusionSlamService extends MicroService {
                     statisticalFolder.increasenumLandMarks();
                 }
             }
-            complete(trackedObjectsEvent, true);
+            complete(trackedObjectsEvent, true); //
         });
 
         
