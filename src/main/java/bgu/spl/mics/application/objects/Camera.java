@@ -13,16 +13,17 @@ public class Camera {
         ERROR
     }
     private int ID;
+    private String cameraKey;
     private int frequency;
     private Status status;
     private List<StampedDetectedObjects> allObjects;
     private List<StampedDetectedObjects> detectedObjectsList;
 
-    public Camera(int ID, int frequency, Status status) {
+    public Camera(int ID, int frequency, String cameraKey, String dataPath) {
         this.ID = ID;
         this.frequency = frequency;
-        this.status = status;
-        this.allObjects = CameraParser.parseCameraData("camera_data.json");
+        this.status = Status.UP;
+        this.allObjects = CameraParser.parseCameraData(dataPath, cameraKey);
         this.detectedObjectsList = new LinkedList<>();
     }
 
@@ -53,5 +54,15 @@ public class Camera {
         }
         return null;
     } 
+
+    public String toString() {
+        return "Camera{" +
+                "ID=" + ID +
+                ", frequency=" + frequency +
+                ", status=" + status +
+                //", allObjects=" + allObjects.size() + 
+                ", detectedObjectsList=" + detectedObjectsList.size() + 
+                '}';
+    }
 
 }

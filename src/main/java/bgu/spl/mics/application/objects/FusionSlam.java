@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Iterator;
 
 import bgu.spl.mics.MessageBusImpl;
-import bgu.spl.mics.application.objects.FusionSlam.FusionSlamHolder.SingletonHolder;
+//import bgu.spl.mics.application.objects.SingletonHolder;
 
 /**
  * Manages the fusion of sensor data for simultaneous localization and mapping
@@ -103,6 +103,6 @@ public class FusionSlam {
                     return true;
                 }
             }
+            return true;
         }
     }
-}

@@ -9,14 +9,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class CameraParser {
 
-      public static List<StampedDetectedObjects> parseCameraData(String filePath) {
+      public static List<StampedDetectedObjects> parseCameraData(String filePath, String cameraKey) {
         Gson gson = new Gson();
         try (FileReader reader = new FileReader(filePath)) {
-            Type listType = new TypeToken<List<StampedDetectedObjects>>(){}.getType();
-            return gson.fromJson(reader, listType);
+            Type type = new TypeToken<Map<String, List<StampedDetectedObjects>>>(){}.getType();
+            Map<String, List<StampedDetectedObjects>> data = gson.fromJson(reader, type);
+            return data.get(cameraKey);  // Retrieve the list of detected objects for the specific camera
         } catch (IOException e) {
             e.printStackTrace();
             return null;
