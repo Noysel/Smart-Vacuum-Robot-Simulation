@@ -50,4 +50,7 @@ public class TrackedObject {
         return event;
     }
 
+    public String toString() {
+        return "objID:" + ID + ", objTime: " + time + " description:" + description + ", coord:" + coordinates;
+    }
 }

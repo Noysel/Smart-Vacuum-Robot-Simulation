@@ -17,24 +17,17 @@ public class InputParser {
         Gson gson = new Gson();
         try (FileReader reader = new FileReader(filePath)) {
             Configuration conf = gson.fromJson(reader, Configuration.class);
-            if (conf != null && conf.getCameras() != null && conf.getCameras().getCamerasConfigurations() != null) {
-                List<Camera> cameras = new LinkedList<>();
-                String dataPath = conf.getCameras().getCamera_datas_path();
-                
-                for (Configuration.CameraConfiguration camConfig : conf.getCameras().getCamerasConfigurations()) {
-                    Camera camera = new Camera(
-                        camConfig.getId(),
-                        camConfig.getFrequency(),
-                        camConfig.getCamera_key(),
-                        dataPath);
-                    cameras.add(camera);
-                }
-                
-                conf.getCameras().setCamerasList(cameras);
+            for (Camera cm : conf.getCameras().getCamerasConfiguration()) {
+                cm.initDefault(conf.getCameras().getCameraDatasPath());
+            }
+            for (LiDarWorkerTracker lidar : conf.getLiDarWorkers().getLidarConfigurations()) {
+                lidar.initDefault(conf.getLiDarWorkers().getLidarsDataPath());
             }
             return conf;
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
             return null;
         }
     }
+}

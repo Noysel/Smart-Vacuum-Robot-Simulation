@@ -2,6 +2,9 @@ package bgu.spl.mics.application.objects;
 
 import bgu.spl.mics.application.objects.TrackedObject;
 import java.util.List;
+
+import com.google.gson.annotations.SerializedName;
+
 import java.util.LinkedList;
 import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.application.objects.StampedDetectedObjects;
@@ -19,6 +22,7 @@ public class LiDarWorkerTracker {
         ERROR
     }
 
+    @SerializedName("id")
     private int ID;
     private int frequency;
     private Status status;
@@ -26,14 +30,29 @@ public class LiDarWorkerTracker {
     private List<StampedCloudPoints> allObj;
     private List<TrackedObject> notYetTO;
 
-    public LiDarWorkerTracker(int ID, int frequency, Status status) {
+    public LiDarWorkerTracker(int ID, int frequency) {
         this.ID = ID;
         this.frequency = frequency;
-        this.status = status;
+        this.status = Status.UP;
         this.lastTrackedObjects = new LinkedList<TrackedObject>();
         this.allObj = LiDarDataBase.getInstance("lidar_data.json").getStampedCloudPoints();
         this.notYetTO = new LinkedList<>();
 
+    }
+
+    public void initDefault(String filePath) {
+        if (status == null){
+            status = Status.UP;
+        }
+        if (lastTrackedObjects == null){
+            lastTrackedObjects = new LinkedList<>();
+        }
+        if (allObj == null) {
+            allObj = LiDarDataBase.getInstance(filePath).getStampedCloudPoints();
+        }
+        if (notYetTO == null) {
+            notYetTO = new LinkedList<>();
+        }
     }
 
     public int getID() {
@@ -44,7 +63,7 @@ public class LiDarWorkerTracker {
         return this.frequency;
     }
 
-    public Status geStatus() {
+    public Status getStatus() {
         return this.status;
     }
 
@@ -61,10 +80,11 @@ public class LiDarWorkerTracker {
                 notYetTO.remove(trackedObj);
             }
         }
-        if (newLastTracked != null){
+        if (!newLastTracked.isEmpty()){
             lastTrackedObjects = newLastTracked;
+            return lastTrackedObjects;
         }
-        return newLastTracked;
+        return null;
     }
 
     public List<TrackedObject> interval(int tickTime, DetectObjectEvent event) {
@@ -95,5 +115,9 @@ public class LiDarWorkerTracker {
             }
         }
         return null;
+    }
+
+    public String toString() {
+        return ("id:" + ID + ", frequency:" + frequency + ", status:" + status + ", lastTracked:" + lastTrackedObjects + ", ollObj: " + allObj + ", notYet:" + notYetTO); 
     }
 }

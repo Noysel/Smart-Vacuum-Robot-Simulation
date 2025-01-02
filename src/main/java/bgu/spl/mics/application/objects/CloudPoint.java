@@ -33,4 +33,8 @@ public class CloudPoint {
     public void setY(double newY) {
         x = newY;
     }
+
+    public String toString() {
+        return "x:" + x + ", y:" + y;
+    }
 }
