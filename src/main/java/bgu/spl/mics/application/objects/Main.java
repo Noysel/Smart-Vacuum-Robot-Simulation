@@ -8,7 +8,7 @@ public class Main {
             System.out.println(cm);
         }
         for (LiDarWorkerTracker lidar : conf.getLiDarWorkers().getLidarConfigurations()) {
-            System.out.println(lidar);
+            System.out.println(lidar); //
         }
 
     }
