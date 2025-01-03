@@ -38,6 +38,7 @@ public class Main {
         for (LiDarWorkerTracker lidar : conf.getLiDarWorkers().getLidarConfigurations()) {
             System.out.println(lidar); 
         }
+        //////////
 
     }
 
