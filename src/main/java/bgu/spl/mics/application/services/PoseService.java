@@ -12,9 +12,9 @@ import bgu.spl.mics.application.objects.StampedDetectedObjects;
 import java.util.List;
 import bgu.spl.mics.application.objects.Pose;
 
-
 /**
- * PoseService is responsible for maintaining the robot's current pose (position and orientation)
+ * PoseService is responsible for maintaining the robot's current pose (position
+ * and orientation)
  * and broadcasting PoseEvents at every tick.
  */
 public class PoseService extends MicroService {
@@ -26,6 +26,7 @@ public class PoseService extends MicroService {
      */
 
     private GPSIMU gpsimu;
+
     public PoseService(GPSIMU gpsimu) {
         super("PoseService");
         this.gpsimu = gpsimu;
@@ -38,22 +39,13 @@ public class PoseService extends MicroService {
     @Override
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
-            int currentTick = tickBroadcast.getTime();
-            List<Pose> poseList = gpsimu.getPoseList();
-            for (Pose pose : poseList) {
-                if (currentTick == pose.getTime()) {
-                    Future<Boolean> futureObj = sendEvent(new PoseEvent(pose));
-                    if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
-                        System.out.println("Time has elapsed, no services has resolved the event - terminating");
+            gpsimu.increaseCurrentTick();
+            Pose lastPose = gpsimu.getCurrentPose();
+            Future<Boolean> futureObj = sendEvent(new PoseEvent(lastPose));
+            if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
+                    System.out.println("Time has elapsed, no services has resolved the event - terminating");
                         terminate();
                     }
-                    break;
-                }
-            }
-        });
+});
 
-        subscribeBroadcast(CrashedBroadcast.class, crashed -> {
-            terminate();
-        });
-    }
-}
+subscribeBroadcast(CrashedBroadcast.class,crashed->{terminate();});}}

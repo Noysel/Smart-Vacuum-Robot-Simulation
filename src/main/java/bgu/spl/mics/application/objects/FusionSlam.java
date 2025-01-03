@@ -54,12 +54,12 @@ public class FusionSlam {
         notifyAll();
     }
 
-    public CloudPoint ConvertCoordinates(CloudPoint coordinates, Pose Detectedpose) {
+    public CloudPoint ConvertCoordinates(List<Double> coordinates, Pose Detectedpose) {
         double radYaw = Math.toRadians(Detectedpose.getYaw());
         double cosYaw = Math.cos(radYaw);
         double sinYaw = Math.sin(cosYaw);
-        double xG = (cosYaw * coordinates.getX()) - (sinYaw * coordinates.getY()) + Detectedpose.getX();
-        double yG = (sinYaw * coordinates.getX()) + (cosYaw * coordinates.getY()) + Detectedpose.getY();
+        double xG = (cosYaw * coordinates.get(0)) - (sinYaw * coordinates.get(1)) + Detectedpose.getX();
+        double yG = (sinYaw * coordinates.get(0)) + (cosYaw * coordinates.get(1)) + Detectedpose.getY();
         return new CloudPoint(xG, yG);
     }
 
@@ -76,7 +76,7 @@ public class FusionSlam {
         }
         for (Pose pose : poses) {
             if (pose.getTime() == trackedObj.getTime()) {
-                for (CloudPoint point : trackedObj.getCoordinates()) {
+                for (List<Double> point : trackedObj.getCoordinates()) {
                     globalCoordinates.add(ConvertCoordinates(point, pose));
                 } 
                 for (LandMark landMark : landMarks) {

@@ -12,7 +12,7 @@ public class StampedCloudPoints {
     @SerializedName("id")
     private String ID;
     private int time;
-    private List<CloudPoint> cloudPoints;
+    private List<List<Double>> cloudPoints;
     public StampedCloudPoints(String ID, int time) {
         this.ID = ID;
         this.time = time;
@@ -24,7 +24,7 @@ public class StampedCloudPoints {
     public int getTime() {
         return time;
     }
-    public List<CloudPoint> geCloudPoints() {
+    public List<List<Double>> geCloudPoints() {
         return cloudPoints;
     }
 

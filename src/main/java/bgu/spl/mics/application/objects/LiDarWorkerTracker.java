@@ -118,6 +118,6 @@ public class LiDarWorkerTracker {
     }
 
     public String toString() {
-        return ("id:" + ID + ", frequency:" + frequency + ", status:" + status + ", lastTracked:" + lastTrackedObjects + ", ollObj: " + allObj + ", notYet:" + notYetTO); 
+        return ("id:" + ID + ", frequency:" + frequency + ", status:" + status + ", lastTracked:" + lastTrackedObjects + ", ollObj: " + allObj.size()+ ", notYet:" + notYetTO); 
     }
 }

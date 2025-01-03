@@ -81,7 +81,7 @@ public class Camera {
                 "ID=" + ID +
                 ", frequency=" + frequency +
                 ", status=" + status +
-                //", allObjects=" + allObjects.size() + 
+                ", allObjects=" + allObjects.size() + 
                 ", detectedObjectsList=" + detectedObjectsList.size() + 
                 '}';
     }

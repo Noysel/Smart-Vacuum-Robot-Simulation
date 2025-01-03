@@ -13,10 +13,10 @@ public class TrackedObject {
     private String ID;
     private int time;
     private String description;
-    private List<CloudPoint> coordinates;
+    private List<List<Double>> coordinates;
     private DetectObjectEvent event;
 
-    public TrackedObject(String ID, int time, String description, List<CloudPoint> coordinates) {
+    public TrackedObject(String ID, int time, String description, List<List<Double>> coordinates) {
         this.ID = ID;
         this.time = time;
         this.description = description;
@@ -24,7 +24,7 @@ public class TrackedObject {
         this.event = null;
     }
 
-    public TrackedObject(String ID, int time, String description, List<CloudPoint> coordinates, DetectObjectEvent event) {
+    public TrackedObject(String ID, int time, String description, List<List<Double>> coordinates, DetectObjectEvent event) {
         this.ID = ID;
         this.time = time;
         this.description = description;
@@ -42,7 +42,7 @@ public class TrackedObject {
     public String getDescription() {
         return description;
     }
-    public List<CloudPoint> getCoordinates() {
+    public List<List<Double>> getCoordinates() {
         return coordinates;
     }
 
