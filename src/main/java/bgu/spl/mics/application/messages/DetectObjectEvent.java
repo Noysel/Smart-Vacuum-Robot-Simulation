@@ -1,5 +1,6 @@
-package bgu.spl.mics;
+package bgu.spl.mics.application.messages;
 
+import bgu.spl.mics.Event;
 import bgu.spl.mics.application.objects.CloudPoint;
 import bgu.spl.mics.application.objects.DetectedObject;
 import bgu.spl.mics.application.objects.TrackedObject;

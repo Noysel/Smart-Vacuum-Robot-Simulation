@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Iterator;
 
 import bgu.spl.mics.MessageBusImpl;
-//import bgu.spl.mics.application.objects.SingletonHolder;
+import bgu.spl.mics.application.messages.TrackedObjectEvent;
 
 /**
  * Manages the fusion of sensor data for simultaneous localization and mapping
@@ -20,7 +20,8 @@ public class FusionSlam {
     private List<LandMark> landMarks;
     private List<Pose> poses;
     private Pose currentPose;
-    private List<TrackedObject> notYetTO;
+    private List<TrackedObjectEvent> notYetTO;
+    private StatisticalFolder statisticalFolder;
 
     private static class SingletonHolder {
         private static FusionSlam instance = new FusionSlam();
@@ -35,6 +36,7 @@ public class FusionSlam {
         this.poses = new LinkedList<>();
         this.currentPose = null;
         this.notYetTO = new LinkedList<>();
+        this.statisticalFolder = StatisticalFolder.getInstance();
     }
 
     public FusionSlam(List<LandMark> landMarks, List<Pose> poses) {
@@ -42,17 +44,21 @@ public class FusionSlam {
         this.poses = poses;
         this.currentPose = null;
         this.notYetTO = new LinkedList<>();
+        this.statisticalFolder = StatisticalFolder.getInstance();
     }
 
-    public void setCurrentPose(Pose pose) {
+    public TrackedObjectEvent setCurrentPose(Pose pose) {
         currentPose = pose;
         poses.add(pose);
-        for (TrackedObject trackedObj : notYetTO) {
-            if (trackedObj.getTime() == currentPose.getTime()){
-                notYetTO.remove(trackedObj);
-                
+        for (TrackedObjectEvent trackedObjEvent : notYetTO) {
+            List<TrackedObject> trackedObjList = trackedObjEvent.getTrackedObjectList();
+            if (!trackedObjList.isEmpty() && currentPose.getTime() == trackedObjList.get(0).getTime()) {
+                notYetTO.remove(trackedObjEvent);
+                insertLandMark(trackedObjEvent);
+                return trackedObjEvent;
             }
         }
+        return null;
     }
 
     public CloudPoint ConvertCoordinates(List<Double> coordinates, Pose Detectedpose) {
@@ -64,13 +70,15 @@ public class FusionSlam {
         return new CloudPoint(xG, yG);
     }
 
-    public Boolean insertLandMark(TrackedObject trackedObj) { // return true if inserting new LandMark
-        List<CloudPoint> globalCoordinates = new LinkedList<>();
-        if (currentPose.getTime() < trackedObj.getTime()) {
-            notYetTO.add(trackedObj);
+    public boolean insertLandMark(TrackedObjectEvent trackedObjEvent) { // return true if inserting new LandMark
+        List<TrackedObject> trackedObjList = trackedObjEvent.getTrackedObjectList();
+        if (!trackedObjList.isEmpty() && currentPose.getTime() < trackedObjList.get(0).getTime()) {
+            notYetTO.add(trackedObjEvent);
             return false;
-        } 
- 
+        }
+        for (TrackedObject trackedObj : trackedObjList) {
+            boolean needNewLandMark = true;
+            List<CloudPoint> globalCoordinates = new LinkedList<>();
             for (Pose pose : poses) {
                 if (pose.getTime() == trackedObj.getTime()) {
                     for (List<Double> point : trackedObj.getCoordinates()) {
@@ -92,15 +100,16 @@ public class FusionSlam {
                                     landMark.addCoordinates(GIterator.next());
                                 }
                             }
-                            return false;
+                            needNewLandMark = false;
                         }
                     }
-                    landMarks.add(new LandMark(trackedObj.getID(), trackedObj.getDescription(), globalCoordinates));
-                    return true;
+                    if (needNewLandMark) {
+                        landMarks.add(new LandMark(trackedObj.getID(), trackedObj.getDescription(), globalCoordinates));
+                        statisticalFolder.increasenumLandMarks();
+                    }
                 }
             }
-            return true;
         }
+        return true;
     }
-
-
+}

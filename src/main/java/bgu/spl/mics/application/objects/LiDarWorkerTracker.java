@@ -6,7 +6,8 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.LinkedList;
-import bgu.spl.mics.DetectObjectEvent;
+
+import bgu.spl.mics.application.messages.DetectObjectEvent;
 import bgu.spl.mics.application.objects.StampedDetectedObjects;
 
 /**
@@ -88,23 +89,35 @@ public class LiDarWorkerTracker {
 
     public List<TrackedObject> interval(int tickTime, DetectObjectEvent event) {
         StampedDetectedObjects stampedObj = event.getDetectedObj();
-        for (StampedCloudPoints obj : allObj) {
-            if (tickTime < obj.getTime() + frequency) {
+
+        if (allObj.isEmpty()) {
+            List<TrackedObject> terminationList = new LinkedList<>();
+            terminationList.add(new TrackedObject("-2", 0, null, null));
+            return terminationList;
+        }
+        for (StampedCloudPoints StampedCPbj : allObj) {
+            if (StampedCPbj.getTime() == stampedObj.getTime() + frequency && StampedCPbj.getID() == "ERROR") {
+                List<TrackedObject> errorList = new LinkedList<>();
+                errorList.add(new TrackedObject("-1", 0, null, null));
+                return errorList;
+            }
+
+            if (tickTime < StampedCPbj.getTime() + frequency) {
                 for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
-                    if (detObj.getID() == obj.getID()) {
-                        TrackedObject trObj = new TrackedObject(obj.getID(), obj.getTime(), detObj.getDescription(), obj.geCloudPoints(), event);
+                    if (detObj.getID() == StampedCPbj.getID()) {
+                        TrackedObject trObj = new TrackedObject(StampedCPbj.getID(), StampedCPbj.getTime(), detObj.getDescription(), StampedCPbj.geCloudPoints(), event);
                         notYetTO.add(trObj);
-                        allObj.remove(obj);
+                        allObj.remove(StampedCPbj);
                     }
                 }
             }
             else {
                 LinkedList<TrackedObject> newLastTracked = new LinkedList<>();
                 for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
-                    if (detObj.getID() == obj.getID() && stampedObj.getTime() == obj.getTime()) {
-                        TrackedObject trObj = new TrackedObject(obj.getID(), obj.getTime(), detObj.getDescription(), obj.geCloudPoints());
+                    if (detObj.getID() == StampedCPbj.getID() && stampedObj.getTime() == StampedCPbj.getTime()) {
+                        TrackedObject trObj = new TrackedObject(StampedCPbj.getID(), StampedCPbj.getTime(), detObj.getDescription(), StampedCPbj.geCloudPoints());
                         newLastTracked.add(trObj);
-                        allObj.remove(obj);
+                        allObj.remove(StampedCPbj);
                     }
                 }
                 if (newLastTracked != null) {

@@ -4,10 +4,11 @@ import java.util.concurrent.TimeUnit;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.Broadcast;
 import bgu.spl.mics.Callback;
-import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
-import bgu.spl.mics.TerminateBroadcast;
-import bgu.spl.mics.TickBroadcast;
+import bgu.spl.mics.application.messages.CrashedBroadcast;
+import bgu.spl.mics.application.messages.DetectObjectEvent;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
+import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.objects.*;
 
 /**
@@ -46,6 +47,18 @@ public class CameraService extends MicroService {
             int currentTime = tickBroadcast.getTime();
             StampedDetectedObjects stampedObj = camera.interval(currentTime);
             if (stampedObj != null) {
+                if (stampedObj.getTime() == -1) {
+                    camera.setStatus(STATUS.ERROR);
+                    sendBroadcast(new CrashedBroadcast(this.getName(), stampedObj.getDetectedObjects().get(0).getDescription()));
+                    terminate();
+                }
+
+                if (stampedObj.getTime() == -2) {
+                    camera.setStatus(STATUS.DOWN);
+                    sendBroadcast(new TerminateBroadcast(getName()));
+                    terminate();
+                }
+
                     DetectObjectEvent ev = new DetectObjectEvent(stampedObj);
                     Future<Boolean> futureObj = sendEvent(ev);
                     statisticalFolder.increasenumDetectedObjects();
@@ -57,10 +70,12 @@ public class CameraService extends MicroService {
             
         });
         this.subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
+            camera.setStatus(STATUS.DOWN);
             this.terminate();
         });
         this.subscribeBroadcast(CrashedBroadcast.class, Terminate -> {
-            this.terminate(); // CHECK TO TERMINATE.
+            camera.setStatus(STATUS.DOWN);
+            this.terminate();
         });
         camera.setStatus(STATUS.UP);
     }

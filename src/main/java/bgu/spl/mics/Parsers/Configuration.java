@@ -1,6 +1,9 @@
-package bgu.spl.mics.application.objects;
+package bgu.spl.mics.Parsers;
 
 import java.util.List;
+
+import bgu.spl.mics.application.objects.Camera;
+import bgu.spl.mics.application.objects.LiDarWorkerTracker;
 
 /**
  * Configuration class to represent the entire configuration structure.
@@ -12,12 +15,20 @@ public class Configuration {
    private int TickTime;
    private int Duration;
 
-   public Cameras getCameras() {
-    return Cameras;
+   public List<Camera> getCamerasConfiguration() {
+    return Cameras.getCamerasConfiguration();
    }
 
-   public LiDarWorkers getLiDarWorkers() {
-    return LiDarWorkers;
+   public List<LiDarWorkerTracker> getLidarConfigurations() {
+    return LiDarWorkers.getLidarConfigurations();
+   }
+
+   public String getCameraDataPath() {
+    return Cameras.getCameraDatasPath();
+   }
+
+   public String getLidarDataPath() {
+    return LiDarWorkers.getLidarsDataPath();
    }
 
    public String getPoseJsonFile() {

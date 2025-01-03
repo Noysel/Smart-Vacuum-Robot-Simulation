@@ -1,8 +1,8 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
-import bgu.spl.mics.TerminateBroadcast;
-import bgu.spl.mics.TickBroadcast;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
+import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.objects.StatisticalFolder;
 
 /**
@@ -40,10 +40,11 @@ public class TimeService extends MicroService {
             sendBroadcast(new TickBroadcast(tick));
             statisticalFolder.increaseSystemRunTime();
         }
-        sendBroadcast(new TerminateBroadcast());  
+        sendBroadcast(new TerminateBroadcast(getName()));  
     } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
     } finally {
+        sendBroadcast(new TerminateBroadcast(getName()));
         terminate(); 
     }
     }

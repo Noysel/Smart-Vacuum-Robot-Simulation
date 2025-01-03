@@ -1,7 +1,10 @@
 package bgu.spl.mics.application.objects;
 import bgu.spl.mics.MessageBusImpl;
-import bgu.spl.mics.TickBroadcast;
+import bgu.spl.mics.Parsers.Configuration;
+import bgu.spl.mics.Parsers.InputParser;
+import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.services.*;
+import bgu.spl.mics.Parsers.*;
 import java.util.List;
 import java.util.LinkedList;
 
@@ -12,12 +15,12 @@ public class Main {
         Configuration conf = InputParser.parseConfiguration("example_input_2\\configuration_file.json");
         List<CameraService> camServList = new LinkedList<>();
         List<LiDarService> lidarServList = new LinkedList<>();
-        for (Camera camera : conf.getCameras().getCamerasConfiguration()) {
+        for (Camera camera : conf.getCamerasConfiguration()) {
             CameraService cameraServ = new CameraService(camera);
             camServList.add(cameraServ);
             cameraServ.run();
         }
-        for (LiDarWorkerTracker lidar : conf.getLiDarWorkers().getLidarConfigurations()) {
+        for (LiDarWorkerTracker lidar : conf.getLidarConfigurations()) {
             LiDarService lidarServ = new LiDarService(lidar);
             lidarServList.add(lidarServ);
             lidarServ.run();
@@ -47,7 +50,29 @@ public class Main {
             }
         }
         timeServ.run();
+        boolean isError = false;
+        for (Camera camera : conf.getCamerasConfiguration()) {
+            if (camera.getStatus() == STATUS.ERROR) {
+                isError = true;
+                break;
+            }
+        }
+        for (LiDarWorkerTracker lidar : conf.getLidarConfigurations()) {
+            if (lidar.getStatus() == STATUS.ERROR) {
+                isError = true;
+                break;
+            }
+        }
 
+        if (!isError) {
+            
+        }
+
+
+
+
+
+        //////////////////////////
         System.out.println(lidarServList);
         System.out.println(gps.getStatus());
         System.out.println(fusionSlamServ.getStatus());

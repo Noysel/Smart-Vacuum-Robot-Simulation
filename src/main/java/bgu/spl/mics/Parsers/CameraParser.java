@@ -1,7 +1,10 @@
-package bgu.spl.mics.application.objects;
+package bgu.spl.mics.Parsers;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+
+import bgu.spl.mics.application.objects.StampedDetectedObjects;
+
 import java.lang.reflect.Type;
 
 import java.io.FileReader;

@@ -3,12 +3,16 @@ package bgu.spl.mics.application.services;
 import java.util.concurrent.TimeUnit;
 
 import bgu.spl.mics.Callback;
-import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
-import bgu.spl.mics.TickBroadcast;
+
 import java.util.List;
 import bgu.spl.mics.application.objects.Pose;
+import bgu.spl.mics.application.messages.CrashedBroadcast;
+import bgu.spl.mics.application.messages.DetectObjectEvent;
+import bgu.spl.mics.application.messages.PoseEvent;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
+import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.objects.*;
 
 /**
@@ -47,8 +51,13 @@ public class PoseService extends MicroService {
                 terminate();
             }
         });
+        subscribeBroadcast(TerminateBroadcast.class, terminate -> {
+            gpsimu.setStatus(STATUS.DOWN);
+            terminate();
+        });
 
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
+            gpsimu.setStatus(STATUS.DOWN);
             terminate();
         });
         gpsimu.setStatus(STATUS.UP);

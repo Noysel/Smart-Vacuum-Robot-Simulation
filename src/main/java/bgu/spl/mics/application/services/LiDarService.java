@@ -3,11 +3,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import bgu.spl.mics.Callback;
-import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
-import bgu.spl.mics.TerminateBroadcast;
-import bgu.spl.mics.TickBroadcast;
 import bgu.spl.mics.Future;
+import bgu.spl.mics.application.messages.CrashedBroadcast;
+import bgu.spl.mics.application.messages.DetectObjectEvent;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
+import bgu.spl.mics.application.messages.TickBroadcast;
+import bgu.spl.mics.application.messages.TrackedObjectEvent;
 import bgu.spl.mics.application.objects.*;
 
 
@@ -49,7 +51,7 @@ public class LiDarService extends MicroService {
         subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
             timeTick = tickBroadcast.getTime();
             List<TrackedObject> listTracked = liDar.CheckIfTimed(timeTick);
-            if (listTracked != null){
+            if (listTracked != null) {
                 for (TrackedObject trackedObj : listTracked) {
                     DetectObjectEvent detEvent = trackedObj.getEvent();
                     if (!detEvent.isCompleted()) {
@@ -66,14 +68,29 @@ public class LiDarService extends MicroService {
             }
         });
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
+            liDar.setStatus(STATUS.DOWN);
             this.terminate();
         });
         subscribeBroadcast(CrashedBroadcast.class, Terminate -> {
-            this.terminate(); // CHECK..
+            liDar.setStatus(STATUS.DOWN);
+            this.terminate(); 
         });
         subscribeEvent(DetectObjectEvent.class, DetectedObjectsEvent -> {
             List<TrackedObject> listTracked = liDar.interval(timeTick, DetectedObjectsEvent);
             if (listTracked != null){
+
+                if (listTracked.get(0).getID() == "-1") {
+                    liDar.setStatus(STATUS.ERROR);
+                    sendBroadcast(new CrashedBroadcast(this.getName(), "Connection to LiDAR lost"));
+                    terminate();
+                }
+
+                if (listTracked.get(0).getID() == "-2") {
+                    liDar.setStatus(STATUS.DOWN);
+                    sendBroadcast(new TerminateBroadcast(getName()));
+                    terminate();
+                }
+
                 Future<Boolean> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
                 DetectedObjectsEvent.complete();
                 complete(DetectedObjectsEvent, true);

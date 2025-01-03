@@ -1,8 +1,12 @@
-package bgu.spl.mics.application.objects;
+package bgu.spl.mics.Parsers;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+
+import bgu.spl.mics.application.objects.Camera;
+import bgu.spl.mics.application.objects.LiDarWorkerTracker;
+
 import java.lang.reflect.Type;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -17,11 +21,11 @@ public class InputParser {
         Gson gson = new Gson();
         try (FileReader reader = new FileReader(filePath)) {
             Configuration conf = gson.fromJson(reader, Configuration.class);
-            for (Camera cm : conf.getCameras().getCamerasConfiguration()) {
-                cm.initDefault(conf.getCameras().getCameraDatasPath());
+            for (Camera cm : conf.getCamerasConfiguration()) {
+                cm.initDefault(conf.getCameraDataPath());
             }
-            for (LiDarWorkerTracker lidar : conf.getLiDarWorkers().getLidarConfigurations()) {
-                lidar.initDefault(conf.getLiDarWorkers().getLidarsDataPath());
+            for (LiDarWorkerTracker lidar : conf.getLidarConfigurations()) {
+                lidar.initDefault(conf.getLidarDataPath());
             }
             return conf;
         }

@@ -1,9 +1,13 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
-import bgu.spl.mics.TerminateBroadcast;
-import bgu.spl.mics.TickBroadcast;
+import bgu.spl.mics.application.messages.CrashedBroadcast;
+import bgu.spl.mics.application.messages.PoseEvent;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
+import bgu.spl.mics.application.messages.TickBroadcast;
+import bgu.spl.mics.application.messages.TrackedObjectEvent;
 import bgu.spl.mics.application.objects.*;
+
 import java.util.List;
 
 
@@ -21,15 +25,12 @@ public class FusionSlamService extends MicroService {
      * @param fusionSlam The FusionSLAM object responsible for managing the global map.
      */
     private FusionSlam fs;
-    private StatisticalFolder statisticalFolder;
     private STATUS status;
 
     public FusionSlamService(FusionSlam fusionSlam) {
         super("FusionSlamService");
         this.fs = fusionSlam;
-        this.statisticalFolder = StatisticalFolder.getInstance();
-        this.status = STATUS.DOWN;
-        
+        this.status = STATUS.DOWN; 
     }
 
     /**
@@ -40,6 +41,7 @@ public class FusionSlamService extends MicroService {
     @Override
     protected void initialize() {
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
+            
             terminate();
         });
 
@@ -48,19 +50,17 @@ public class FusionSlamService extends MicroService {
         });
 
         subscribeEvent(PoseEvent.class, poseEvent -> {
-            fs.setCurrentPose(poseEvent.getPose());
+            TrackedObjectEvent trackedObjectEvent = fs.setCurrentPose(poseEvent.getPose());
+            if (trackedObjectEvent != null) {
+                complete(trackedObjectEvent, true);
+            }
         });
 
         subscribeEvent(TrackedObjectEvent.class, trackedObjectsEvent -> {
-            List<TrackedObject> trackedObjList = trackedObjectsEvent.getTrackedObjectList();
-            for (TrackedObject trackedObj : trackedObjList){
-                if (fs.insertLandMark(trackedObj)){
-                    statisticalFolder.increasenumLandMarks();
-                }
+            if (fs.insertLandMark(trackedObjectsEvent)) {
+                complete(trackedObjectsEvent, true); 
             }
-            complete(trackedObjectsEvent, true); 
         });
-
         status = STATUS.UP;
     }
 
