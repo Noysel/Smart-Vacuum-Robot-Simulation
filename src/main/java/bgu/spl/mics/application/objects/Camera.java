@@ -9,31 +9,27 @@ import com.google.gson.annotations.SerializedName;
  */
 
 public class Camera {
-    private enum Status {
-        UP,
-        DOWN,
-        ERROR
-    }
+
     @SerializedName("id")
     private int ID;
     @SerializedName("camera_key")
     private String cameraKey;
     private int frequency;
-    private Status status;
+    private STATUS status;
     private List<StampedDetectedObjects> allObjects;
     private List<StampedDetectedObjects> detectedObjectsList = new LinkedList<>();
 
     public Camera(int ID, int frequency, String cameraKey, String dataPath) {
         this.ID = ID;
         this.frequency = frequency;
-        this.status = Status.UP;
+        this.status = STATUS.DOWN;
         this.allObjects = CameraParser.parseCameraData(dataPath, cameraKey);
         this.detectedObjectsList = new LinkedList<>();
     }
 
     public void initDefault(String dataPath) {
         if (status == null) {
-            status = Status.UP;
+            status = STATUS.DOWN;
         }
         if (allObjects == null) {
             allObjects = CameraParser.parseCameraData(dataPath, cameraKey);
@@ -49,8 +45,12 @@ public class Camera {
     public int getFrequency() {
         return this.frequency;
     }
-    public Status geStatus() {
+    public STATUS getStatus() {
         return this.status;
+    }
+
+    public void setStatus(STATUS status) {
+        this.status = status;
     }
 
     public String getCameraKey() {

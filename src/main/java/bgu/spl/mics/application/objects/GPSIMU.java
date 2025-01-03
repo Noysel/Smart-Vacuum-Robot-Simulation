@@ -10,20 +10,16 @@ import bgu.spl.mics.application.services.PoseParser;
  * Provides information about the robot's position and movement.
  */
 public class GPSIMU {
-    private enum Status {
-        UP,
-        DOWN,
-        ERROR
-    }
+
     private int currentTick;
-    private Status status;
+    private STATUS status;
     private List<Pose> poseList;
     private Iterator<Pose> poseIterator;
     private Pose lastPose;
 
     public GPSIMU() {
         this.currentTick = 0;
-        this.status = Status.UP;
+        this.status = STATUS.DOWN;
         this.poseList = PoseParser.parsePoseData("example_input_2\\pose_data.json");
         this.poseIterator = poseList.iterator();
         this.lastPose = null;
@@ -38,9 +34,14 @@ public class GPSIMU {
         this.lastPose = poseIterator.next();
     }
 
-    public Status getStatus() {
+    public STATUS getStatus() {
         return status;
     }
+
+    public void setStatus(STATUS status) {
+        this.status = status;
+    }
+
     public Pose getCurrentPose() {
         return lastPose;
     }

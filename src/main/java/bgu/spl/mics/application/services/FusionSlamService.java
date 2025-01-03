@@ -3,11 +3,9 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.TerminateBroadcast;
 import bgu.spl.mics.TickBroadcast;
-import bgu.spl.mics.application.objects.FusionSlam;
-import bgu.spl.mics.application.objects.StatisticalFolder;
-
+import bgu.spl.mics.application.objects.*;
 import java.util.List;
-import bgu.spl.mics.application.objects.TrackedObject;
+
 
 /**
  * FusionSlamService integrates data from multiple sensors to build and update
@@ -24,11 +22,13 @@ public class FusionSlamService extends MicroService {
      */
     private FusionSlam fs;
     private StatisticalFolder statisticalFolder;
+    private STATUS status;
 
     public FusionSlamService(FusionSlam fusionSlam) {
         super("FusionSlamService");
         this.fs = fusionSlam;
         this.statisticalFolder = StatisticalFolder.getInstance();
+        this.status = STATUS.DOWN;
         
     }
 
@@ -39,9 +39,6 @@ public class FusionSlamService extends MicroService {
      */
     @Override
     protected void initialize() {
-        subscribeBroadcast(TickBroadcast.class, timeEvent -> {
-            fs.setTime(timeEvent.getTime());
-        });
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             terminate();
         });
@@ -61,9 +58,13 @@ public class FusionSlamService extends MicroService {
                     statisticalFolder.increasenumLandMarks();
                 }
             }
-            complete(trackedObjectsEvent, true); //
+            complete(trackedObjectsEvent, true); 
         });
 
-        
+        status = STATUS.UP;
+    }
+
+    public STATUS getStatus() { //getStatus for the main to know that the service we
+        return status;
     }
 }

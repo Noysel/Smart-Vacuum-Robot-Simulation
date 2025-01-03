@@ -16,16 +16,11 @@ import bgu.spl.mics.application.objects.StampedDetectedObjects;
  * Each worker tracks objects and sends observations to the FusionSlam service.
  */
 public class LiDarWorkerTracker {
-    private enum Status {
-        UP,
-        DOWN,
-        ERROR
-    }
 
     @SerializedName("id")
     private int ID;
     private int frequency;
-    private Status status;
+    private STATUS status;
     private List<TrackedObject> lastTrackedObjects;
     private List<StampedCloudPoints> allObj;
     private List<TrackedObject> notYetTO;
@@ -33,7 +28,7 @@ public class LiDarWorkerTracker {
     public LiDarWorkerTracker(int ID, int frequency) {
         this.ID = ID;
         this.frequency = frequency;
-        this.status = Status.UP;
+        this.status = STATUS.DOWN;
         this.lastTrackedObjects = new LinkedList<TrackedObject>();
         this.allObj = LiDarDataBase.getInstance("lidar_data.json").getStampedCloudPoints();
         this.notYetTO = new LinkedList<>();
@@ -42,7 +37,7 @@ public class LiDarWorkerTracker {
 
     public void initDefault(String filePath) {
         if (status == null){
-            status = Status.UP;
+            status = STATUS.DOWN;
         }
         if (lastTrackedObjects == null){
             lastTrackedObjects = new LinkedList<>();
@@ -63,8 +58,12 @@ public class LiDarWorkerTracker {
         return this.frequency;
     }
 
-    public Status getStatus() {
+    public STATUS getStatus() {
         return this.status;
+    }
+
+    public void setStatus(STATUS status) {
+        this.status = status;
     }
 
     public List<TrackedObject> getLastTrDetectedObjects() {

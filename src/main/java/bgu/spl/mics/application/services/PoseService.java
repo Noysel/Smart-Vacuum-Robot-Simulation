@@ -7,10 +7,9 @@ import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.TickBroadcast;
-import bgu.spl.mics.application.objects.GPSIMU;
-import bgu.spl.mics.application.objects.StampedDetectedObjects;
 import java.util.List;
 import bgu.spl.mics.application.objects.Pose;
+import bgu.spl.mics.application.objects.*;
 
 /**
  * PoseService is responsible for maintaining the robot's current pose (position
@@ -34,7 +33,8 @@ public class PoseService extends MicroService {
 
     /**
      * Initializes the PoseService.
-     * Subscribes to TickBroadcast and sends PoseEvents at every tick based on the current pose.
+     * Subscribes to TickBroadcast and sends PoseEvents at every tick based on the
+     * current pose.
      */
     @Override
     protected void initialize() {
@@ -43,9 +43,14 @@ public class PoseService extends MicroService {
             Pose lastPose = gpsimu.getCurrentPose();
             Future<Boolean> futureObj = sendEvent(new PoseEvent(lastPose));
             if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
-                    System.out.println("Time has elapsed, no services has resolved the event - terminating");
-                        terminate();
-                    }
-});
+                System.out.println("Time has elapsed, no services has resolved the event - terminating");
+                terminate();
+            }
+        });
 
-subscribeBroadcast(CrashedBroadcast.class,crashed->{terminate();});}}
+        subscribeBroadcast(CrashedBroadcast.class, crashed -> {
+            terminate();
+        });
+        gpsimu.setStatus(STATUS.UP);
+    }
+}

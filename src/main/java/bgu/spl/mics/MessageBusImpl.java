@@ -105,7 +105,7 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		if (!msqMap.contains(m)) {
+		if (!msqMap.containsKey(m)) {
 			throw new IllegalStateException();
 		}
 		BlockingQueue<Message> queue = msqMap.get(m);

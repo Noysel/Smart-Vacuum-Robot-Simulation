@@ -8,11 +8,7 @@ import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.TerminateBroadcast;
 import bgu.spl.mics.TickBroadcast;
-import bgu.spl.mics.application.objects.Camera;
-import bgu.spl.mics.application.objects.DetectedObject;
-import bgu.spl.mics.application.objects.StampedDetectedObjects;
-import bgu.spl.mics.application.objects.StatisticalFolder;
-import bgu.spl.mics.application.objects.TrackedObject;
+import bgu.spl.mics.application.objects.*;
 
 /**
  * CameraService is responsible for processing data from the camera and
@@ -33,7 +29,7 @@ public class CameraService extends MicroService {
     private StatisticalFolder statisticalFolder;
 
     public CameraService(Camera camera) {
-        super("CameraService");
+        super("CameraService_" + camera.getID());
         this.camera = camera;
         this.statisticalFolder = StatisticalFolder.getInstance();
     }
@@ -66,5 +62,10 @@ public class CameraService extends MicroService {
         this.subscribeBroadcast(CrashedBroadcast.class, Terminate -> {
             this.terminate(); // CHECK TO TERMINATE.
         });
+        camera.setStatus(STATUS.UP);
+    }
+
+    public STATUS getStatus() {
+        return camera.getStatus();
     }
 }

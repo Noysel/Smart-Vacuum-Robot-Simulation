@@ -19,8 +19,8 @@ public class FusionSlam {
 
     private List<LandMark> landMarks;
     private List<Pose> poses;
-    private int time;
     private Pose currentPose;
+    private List<TrackedObject> notYetTO;
 
     private static class SingletonHolder {
         private static FusionSlam instance = new FusionSlam();
@@ -33,25 +33,26 @@ public class FusionSlam {
     public FusionSlam() {
         this.landMarks = new LinkedList<>();
         this.poses = new LinkedList<>();
-        this.time = 0;
         this.currentPose = null;
+        this.notYetTO = new LinkedList<>();
     }
 
     public FusionSlam(List<LandMark> landMarks, List<Pose> poses) {
         this.landMarks = landMarks;
         this.poses = poses;
-        this.time = 0;
         this.currentPose = null;
-    }
-
-    public void setTime(int tickTime) {
-        time = tickTime;
+        this.notYetTO = new LinkedList<>();
     }
 
     public void setCurrentPose(Pose pose) {
         currentPose = pose;
         poses.add(pose);
-        notifyAll();
+        for (TrackedObject trackedObj : notYetTO) {
+            if (trackedObj.getTime() == currentPose.getTime()){
+                notYetTO.remove(trackedObj);
+                
+            }
+        }
     }
 
     public CloudPoint ConvertCoordinates(List<Double> coordinates, Pose Detectedpose) {
@@ -63,42 +64,37 @@ public class FusionSlam {
         return new CloudPoint(xG, yG);
     }
 
-    public Boolean insertLandMark(TrackedObject trackedObj) { //return true if inserting new LandMark
+    public Boolean insertLandMark(TrackedObject trackedObj) { // return true if inserting new LandMark
         List<CloudPoint> globalCoordinates = new LinkedList<>();
-        while (currentPose.getTime() < trackedObj.getTime()) {
-            try {
-				this.wait();
-			}
-			catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-                ///
-			}
-        }
-        for (Pose pose : poses) {
-            if (pose.getTime() == trackedObj.getTime()) {
-                for (List<Double> point : trackedObj.getCoordinates()) {
-                    globalCoordinates.add(ConvertCoordinates(point, pose));
-                } 
-                for (LandMark landMark : landMarks) {
-                    if (trackedObj.getID() == landMark.getID()) {
-                        Iterator<CloudPoint> LMIterator = landMark.getCoordinates().iterator();
-                        Iterator<CloudPoint> GIterator = globalCoordinates.iterator();
-                        while (GIterator.hasNext()) {
-                            if (LMIterator.hasNext()) {
-                            CloudPoint trackedP = GIterator.next();
-                            CloudPoint landMarkP = LMIterator.next();
-                            double landMarkX = landMarkP.getX();
-                            double landMarkY = landMarkP.getY();
-                            landMarkP.setX((landMarkX+trackedP.getX())/2);
-                            landMarkP.setY((landMarkY+trackedP.getY())/2);
-                            }
-                            else {
-                                landMark.addCoordinates(GIterator.next());
-                            }
-                        }
-                        return false;
+        if (currentPose.getTime() < trackedObj.getTime()) {
+            notYetTO.add(trackedObj);
+            return false;
+        } 
+ 
+            for (Pose pose : poses) {
+                if (pose.getTime() == trackedObj.getTime()) {
+                    for (List<Double> point : trackedObj.getCoordinates()) {
+                        globalCoordinates.add(ConvertCoordinates(point, pose));
                     }
-                }
+                    for (LandMark landMark : landMarks) {
+                        if (trackedObj.getID() == landMark.getID()) {
+                            Iterator<CloudPoint> LMIterator = landMark.getCoordinates().iterator();
+                            Iterator<CloudPoint> GIterator = globalCoordinates.iterator();
+                            while (GIterator.hasNext()) {
+                                if (LMIterator.hasNext()) {
+                                    CloudPoint trackedP = GIterator.next();
+                                    CloudPoint landMarkP = LMIterator.next();
+                                    double landMarkX = landMarkP.getX();
+                                    double landMarkY = landMarkP.getY();
+                                    landMarkP.setX((landMarkX + trackedP.getX()) / 2);
+                                    landMarkP.setY((landMarkY + trackedP.getY()) / 2);
+                                } else {
+                                    landMark.addCoordinates(GIterator.next());
+                                }
+                            }
+                            return false;
+                        }
+                    }
                     landMarks.add(new LandMark(trackedObj.getID(), trackedObj.getDescription(), globalCoordinates));
                     return true;
                 }
@@ -106,3 +102,5 @@ public class FusionSlam {
             return true;
         }
     }
+
+

@@ -7,14 +7,8 @@ import bgu.spl.mics.DetectObjectEvent;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.TerminateBroadcast;
 import bgu.spl.mics.TickBroadcast;
-import bgu.spl.mics.application.objects.CloudPoint;
-import bgu.spl.mics.application.objects.LiDarDataBase;
-import bgu.spl.mics.application.objects.LiDarWorkerTracker;
-import bgu.spl.mics.application.objects.StampedCloudPoints;
-import bgu.spl.mics.application.objects.StatisticalFolder;
-import bgu.spl.mics.application.objects.TrackedObject;
 import bgu.spl.mics.Future;
-import bgu.spl.mics.application.objects.LandMark;
+import bgu.spl.mics.application.objects.*;
 
 
 
@@ -38,7 +32,7 @@ public class LiDarService extends MicroService {
     private StatisticalFolder statisticalFolder;
 
     public LiDarService(LiDarWorkerTracker LiDarWorkerTracker) {
-        super("LidarService");
+        super("LidarService_" + LiDarWorkerTracker.getID());
         liDar = LiDarWorkerTracker;
         timeTick = 0;
         this.statisticalFolder = StatisticalFolder.getInstance();
@@ -90,5 +84,11 @@ public class LiDarService extends MicroService {
                 // CHECK IF NEED TO DO SOMETHING IF ITS NOT NULL
             }
         });
+        liDar.setStatus(STATUS.UP);
 }
+
+public STATUS getStatus() {
+    return liDar.getStatus();
+}
+
 }
