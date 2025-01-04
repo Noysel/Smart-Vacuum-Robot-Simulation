@@ -21,7 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class MessageBusImpl implements MessageBus {
 
 	private ConcurrentHashMap<MicroService, BlockingQueue<Message>> msqMap;
-	private ConcurrentHashMap<MicroService, List<Queue<MicroService>>> refMap;
+	private ConcurrentHashMap<MicroService, List<BlockingQueue<MicroService>>> refMap;
 	private ConcurrentHashMap<Class<? extends Message>, BlockingQueue<MicroService>> subMessageMap;
 	private ConcurrentHashMap<Event<?>, Future<?>> eventFutureMap;
 
@@ -43,7 +43,17 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		subMessageMap.computeIfAbsent(type, placeHolder -> new LinkedBlockingQueue<>()).add(m);
+		BlockingQueue<MicroService> queue = subMessageMap.get(type);
+		if (queue == null) {
+			BlockingQueue<MicroService> newQueue = new LinkedBlockingQueue<>();
+			newQueue.add(m);
+			subMessageMap.put(type, newQueue);
+		}
+		else {
+			queue.add(m);
+		}
+
+		//subMessageMap.computeIfAbsent(type, placeHolder -> new LinkedBlockingQueue<>()).add(m);
 		refMap.computeIfAbsent(m, placeHolder -> new CopyOnWriteArrayList<>()).add(subMessageMap.get(type));
 	}
 
@@ -65,11 +75,11 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public void sendBroadcast(Broadcast b) {
 		BlockingQueue<MicroService> qMS = subMessageMap.get(b);
-		if (!qMS.isEmpty()) {
+		if (qMS != null && !qMS.isEmpty()) {
 			for (MicroService ms : qMS) {
 				BlockingQueue<Message> qMessages = msqMap.get(ms);
-                qMessages.add(b);
-            }
+				qMessages.add(b);
+			}
 		}
 	}
 
@@ -77,7 +87,7 @@ public class MessageBusImpl implements MessageBus {
 	public <T> Future<T> sendEvent(Event<T> e) {
 
 		BlockingQueue<MicroService> qMS = subMessageMap.get(e);
-		if (qMS.isEmpty()) {
+		if (qMS != null && qMS.isEmpty()) {
 			return null;
 		}
 		MicroService ms = qMS.poll();
@@ -97,8 +107,10 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public void unregister(MicroService m) {
 		List<Queue<MicroService>> listOfPointers = refMap.get(m);
-		for (Queue<MicroService> q : listOfPointers) {
-			q.remove(m);
+		if (listOfPointers != null) {
+			for (Queue<MicroService> q : listOfPointers) {
+				q.remove(m);
+			}
 		}
 		msqMap.remove(m);
 	}

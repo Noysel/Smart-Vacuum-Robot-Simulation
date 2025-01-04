@@ -34,13 +34,15 @@ public class TimeService extends MicroService {
      */
     @Override
     protected void initialize() {
+        System.out.println("TimeService is UP!"); ////////////
         try {
         for (int tick = 1; tick <= duration; tick++) {
             Thread.sleep(tickTime);
             sendBroadcast(new TickBroadcast(tick));
+            System.out.println("Tick: " + tick); //////////
             statisticalFolder.increaseSystemRunTime();
         }
-        sendBroadcast(new TerminateBroadcast(getName()));  
+        //sendBroadcast(new TerminateBroadcast(getName()));  
     } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
     } finally {

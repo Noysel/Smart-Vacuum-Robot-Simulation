@@ -45,6 +45,7 @@ public class CameraService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
             int currentTime = tickBroadcast.getTime();
+            System.out.println(getName() + "recived tick" + currentTime); ///////////
             StampedDetectedObjects stampedObj = camera.interval(currentTime);
             if (stampedObj != null) {
                 if (stampedObj.getTime() == -1) {
@@ -77,6 +78,7 @@ public class CameraService extends MicroService {
             camera.setStatus(STATUS.DOWN);
             this.terminate();
         });
+        System.out.println(getName() + " is UP!"); /////////////
         camera.setStatus(STATUS.UP);
     }
 

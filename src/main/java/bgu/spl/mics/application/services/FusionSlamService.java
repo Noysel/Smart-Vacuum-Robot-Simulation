@@ -26,11 +26,13 @@ public class FusionSlamService extends MicroService {
      */
     private FusionSlam fs;
     private STATUS status;
+    private int numOfServices;
 
-    public FusionSlamService(FusionSlam fusionSlam) {
+    public FusionSlamService(FusionSlam fusionSlam, int numOfServices) {
         super("FusionSlamService");
         this.fs = fusionSlam;
         this.status = STATUS.DOWN; 
+        this.numOfServices = numOfServices;
     }
 
     /**
@@ -41,8 +43,10 @@ public class FusionSlamService extends MicroService {
     @Override
     protected void initialize() {
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
-            
-            terminate();
+            numOfServices--;
+            if (numOfServices == 0){
+                terminate();
+            }
         });
 
         subscribeBroadcast(CrashedBroadcast.class, Crashed -> {
