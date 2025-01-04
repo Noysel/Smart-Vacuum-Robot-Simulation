@@ -2,7 +2,6 @@ package bgu.spl.mics;
 
 import java.util.Queue;
 import java.util.List;
-import java.util.Map;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -95,9 +94,14 @@ public class MessageBusImpl implements MessageBus {
 			if (ms == null) {
 				System.err.println("No MicroService available to handle event: " + e.getClass().getName());
 			}
-			if (ms != null) {
+			
+			if (ms != null) {	
 				BlockingQueue<Message> qMessages = msqMap.get(ms);
+				if (qMessages == null) {
+					System.out.println(ms.getName()+ "Queue is null for " + e.getClass());
+				}
 				if (qMessages != null) {
+					System.out.println(e.getClass() + " added to: " + ms.getName());
 					qMessages.add(e);
 					qMS.add(ms); // Round-robin logic
 					eventFutureMap.put(e, future);
@@ -114,19 +118,21 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void unregister(MicroService m) {
-		for (Map.Entry<Class<? extends Message>, BlockingQueue<MicroService>> entry : subMessageMap.entrySet()) {
-			synchronized (entry.getValue()) {
-				entry.getValue().remove(m);
+		for (BlockingQueue<MicroService> queue : subMessageMap.values()) {
+			synchronized (queue) {
+				queue.remove(m);
 			}
 		}
+		msqMap.remove(m);
 	}
 
 	@Override
-		public Message awaitMessage(MicroService m) throws InterruptedException {
-			BlockingQueue<Message> queue = msqMap.get(m);
-			if (queue == null) {
-				throw new IllegalStateException("MicroService not registered: " + m.getName());
-			}
-			return queue.take();
+	public Message awaitMessage(MicroService m) throws InterruptedException {
+		if (!msqMap.containsKey(m)) {
+			throw new IllegalStateException();
+		}
+		BlockingQueue<Message> queue = msqMap.get(m);
+		System.out.println(m.getName() + " Waiting Queue size: " + queue.size());
+		return queue.take(); // This will block until a message is available.
 	}
 }

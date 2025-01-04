@@ -94,7 +94,7 @@ public class Main {
         Thread Lidar1 = new Thread(new LiDarService(conf.getLidarConfigurations().get(0)));
        // Thread Lidar2 = new Thread(new LiDarService(conf.getLidarConfigurations().get(1)));
         Thread poseThread = new Thread(new PoseService(new GPSIMU(conf.getPoseJsonFile())));
-        Thread fusionSlamThread = new Thread(new FusionSlamService(new FusionSlam(), 5));
+        Thread fusionSlamThread = new Thread(new FusionSlamService(new FusionSlam(), 3));
 
         // Start the threads
         cameraThread1.start();

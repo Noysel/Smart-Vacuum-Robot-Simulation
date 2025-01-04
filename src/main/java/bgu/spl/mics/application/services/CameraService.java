@@ -64,9 +64,8 @@ public class CameraService extends MicroService {
                     Future<Boolean> futureObj = sendEvent(ev);
                     System.out.println(getName() + " sent detected object");
                     statisticalFolder.increasenumDetectedObjects();
-                    if (futureObj != null && futureObj.get(500, TimeUnit.MILLISECONDS) == null) {
-                        System.out.println(getName() + " Time has elapsed, no services has resolved the event - terminating");
-                           terminate();
+                    if (futureObj != null && futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
+                        System.out.println(getName() + " Future timed out");
                     }
                 }
             
