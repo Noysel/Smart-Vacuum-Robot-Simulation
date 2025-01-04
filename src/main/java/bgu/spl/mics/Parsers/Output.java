@@ -1,7 +1,5 @@
 package bgu.spl.mics.Parsers;
-
 import java.util.concurrent.atomic.AtomicInteger;
-
 import bgu.spl.mics.application.objects.LandMark;
 
 public class Output {
