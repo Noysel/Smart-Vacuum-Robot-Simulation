@@ -45,6 +45,7 @@ public class FusionSlamService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             numOfServices--;
+            System.out.println(numOfServices + " numOfServices");
             if (numOfServices == 0){
                 sendEvent(new KillTimeEvent());
                 terminate();
