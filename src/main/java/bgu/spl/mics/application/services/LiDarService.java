@@ -58,9 +58,11 @@ public class LiDarService extends MicroService {
                     if (!detEvent.isCompleted()) {
                         detEvent.complete();
                         complete(detEvent, true);
+                        System.out.println(getName() + " completed detectedOBj from notYet");
                     }
                 }
                 Future<Boolean> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
+                System.out.println(getName() + " sent trackedObj (from notYet)");
                 statisticalFolder.increasenumTrackedObjects();
                 if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) { // CHECK
                     System.out.println("Time has elapsed, no services has resolved the event - terminating");
@@ -77,25 +79,30 @@ public class LiDarService extends MicroService {
             this.terminate(); 
         });
         subscribeEvent(DetectObjectEvent.class, DetectedObjectsEvent -> {
-            System.out.println(getName() + "recived detected object event");
+            System.out.println(getName() + " recived detected object event from " + DetectedObjectsEvent.getSender());
             List<TrackedObject> listTracked = liDar.interval(timeTick, DetectedObjectsEvent);
             if (listTracked != null && !listTracked.isEmpty()){
-                
+
                 if (listTracked.get(0).getID() == "-1") {
                     liDar.setStatus(STATUS.ERROR);
+                    System.out.println(getName() + " got error detectedObj");
                     sendBroadcast(new CrashedBroadcast(this.getName(), "Connection to LiDAR lost"));
                     terminate();
                 }
 
                 if (listTracked.get(0).getID() == "-2") {
                     liDar.setStatus(STATUS.DOWN);
+                    System.out.println(getName() + " got timeKill error detectedObj");
                     sendBroadcast(new TerminateBroadcast(getName()));
                     terminate();
                 }
 
                 Future<Boolean> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
+                System.out.println(getName() + " sent trackedObj (from listTracked)");
+
                 DetectedObjectsEvent.complete();
                 complete(DetectedObjectsEvent, true);
+                System.out.println(getName() + " completed detectedOBj from listTracked");
                  if (futureObj.get(500, TimeUnit.MILLISECONDS) == null) { // CHECK
                         System.out.println(getName() + " Time has elapsed, no services has resolved the event - terminating");
                             terminate();

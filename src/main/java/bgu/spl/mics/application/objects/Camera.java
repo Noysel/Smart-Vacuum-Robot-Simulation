@@ -73,22 +73,27 @@ public class Camera {
         }
 
         for (StampedDetectedObjects obj : allObjects) {
-            if (tickTime < obj.getTime() + frequency) {
-                break;
-            } else if (tickTime == obj.getTime() + frequency) {
+          //  if (tickTime < obj.getTime() + frequency) {
+              //  break;
+            if (tickTime == obj.getTime() + frequency) {
 
                 if (obj.getDetectedObjects().isEmpty()) {
+                    System.out.println("cam null - is empty");
                     return null;
                 }
                 if (obj.getDetectedObjects().get(0).getID() == "ERROR") {
+                    System.out.println("camera error");
                     return new StampedDetectedObjects(-1, obj.getDetectedObjects());
                 }
                 detectedObjectsList.add(obj);
                 allObjects.remove(obj);
+                System.out.println("cam returned obj");
+
                 return obj;
             }
 
         }
+        System.out.println("cam null after for");
         return null;
     }
 

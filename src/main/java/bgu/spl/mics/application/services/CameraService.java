@@ -60,12 +60,13 @@ public class CameraService extends MicroService {
                     terminate();
                 }
 
-                    DetectObjectEvent ev = new DetectObjectEvent(stampedObj);
+                    DetectObjectEvent ev = new DetectObjectEvent(stampedObj, this.getName()) ;
                     Future<Boolean> futureObj = sendEvent(ev);
+                    System.out.println(getName() + " sent detected object");
                     statisticalFolder.increasenumDetectedObjects();
                     if (futureObj != null && futureObj.get(500, TimeUnit.MILLISECONDS) == null) {
                         System.out.println(getName() + " Time has elapsed, no services has resolved the event - terminating");
-                            terminate();
+                           terminate();
                     }
                 }
             

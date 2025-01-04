@@ -11,9 +11,11 @@ public class DetectObjectEvent implements Event<Boolean> {
 
     private StampedDetectedObjects obj;
     private boolean isCompleted;
-    public DetectObjectEvent(StampedDetectedObjects obj) {
+    private String sender;
+    public DetectObjectEvent(StampedDetectedObjects obj, String sender) {
         this.obj = obj;
         this.isCompleted = false;
+        this.sender = sender;
     }
     public StampedDetectedObjects getDetectedObj() {
         return this.obj;
@@ -23,5 +25,9 @@ public class DetectObjectEvent implements Event<Boolean> {
     }
     public boolean isCompleted() {
         return this.isCompleted;
+    }
+
+    public String getSender() {
+        return sender;
     }
 }

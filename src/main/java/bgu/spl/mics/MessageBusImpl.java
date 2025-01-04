@@ -55,6 +55,7 @@ public class MessageBusImpl implements MessageBus {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public <T> void complete(Event<T> e, T result) {
 		Future<T> future = (Future<T>) eventFutureMap.get(e);
 		if (future != null) {
@@ -65,6 +66,9 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public void sendBroadcast(Broadcast b) {
 		BlockingQueue<MicroService> qMS = subMessageMap.get(b.getClass());
+		if (qMS == null) {
+			System.out.println("qMS is null" + b.getClass());
+		}
 		if (qMS != null) {
 			synchronized (qMS) {
 				qMS.forEach(ms -> {
@@ -87,7 +91,10 @@ public class MessageBusImpl implements MessageBus {
 		Future<T> future = new Future<>();
 		synchronized (qMS) {
 			MicroService ms = qMS.poll();
-			if (ms != null) {
+			if (ms == null) {
+				System.err.println("No MicroService available to handle event: " + e.getClass().getName());
+			}
+			if (ms != null) {	
 				BlockingQueue<Message> qMessages = msqMap.get(ms);
 				if (qMessages != null) {
 					qMessages.add(e);
