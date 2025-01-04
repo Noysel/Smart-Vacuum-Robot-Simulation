@@ -24,7 +24,7 @@
     }],
     "lidars_data_path":"example_input_2/lidar_data.json"
   },
-  "poseJsonFile": "./pose_data.json",
+  "poseJsonFile": "example_input_2/pose_data.json",
   "TickTime": 2,
   "Duration": 100
 }

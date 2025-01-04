@@ -18,10 +18,10 @@ public class GPSIMU {
     private Iterator<Pose> poseIterator;
     private Pose lastPose;
 
-    public GPSIMU() {
+    public GPSIMU(String filePath) {
         this.currentTick = 0;
         this.status = STATUS.DOWN;
-        this.poseList = PoseParser.parsePoseData("example_input_2\\pose_data.json");
+        this.poseList = PoseParser.parsePoseData(filePath);
         this.poseIterator = poseList.iterator();
         this.lastPose = null;
     }
@@ -30,9 +30,13 @@ public class GPSIMU {
         return currentTick;
     }
 
-    public void increaseCurrentTick() {
+    public boolean increaseCurrentTick() {
         currentTick++;
-        this.lastPose = poseIterator.next();
+        if (poseIterator.hasNext()) {
+            this.lastPose = poseIterator.next();
+            return true;
+        }
+        return false;
     }
 
     public STATUS getStatus() {

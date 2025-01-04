@@ -21,7 +21,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class MessageBusImpl implements MessageBus {
 
 	private ConcurrentHashMap<MicroService, BlockingQueue<Message>> msqMap;
-	private ConcurrentHashMap<MicroService, List<BlockingQueue<MicroService>>> refMap;
 	private ConcurrentHashMap<Class<? extends Message>, BlockingQueue<MicroService>> subMessageMap;
 	private ConcurrentHashMap<Event<?>, Future<?>> eventFutureMap;
 
@@ -35,7 +34,6 @@ public class MessageBusImpl implements MessageBus {
 
 	public MessageBusImpl() {
 		msqMap = new ConcurrentHashMap<>();
-		refMap = new ConcurrentHashMap<>();
 		subMessageMap = new ConcurrentHashMap<>();
 		eventFutureMap = new ConcurrentHashMap<>();
 	}
@@ -43,25 +41,17 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		BlockingQueue<MicroService> queue = subMessageMap.get(type);
-		if (queue == null) {
-			BlockingQueue<MicroService> newQueue = new LinkedBlockingQueue<>();
-			newQueue.add(m);
-			subMessageMap.put(type, newQueue);
-		}
-		else {
-			queue.add(m);
-		}
+		subMessageMap.computeIfAbsent(type, k -> new LinkedBlockingQueue<>()).add(m);
+		System.out.println(m.getName() + " subscribed to event: " + type.getName());
 
-		//subMessageMap.computeIfAbsent(type, placeHolder -> new LinkedBlockingQueue<>()).add(m);
-		refMap.computeIfAbsent(m, placeHolder -> new CopyOnWriteArrayList<>()).add(subMessageMap.get(type));
+		// subMessageMap.computeIfAbsent(type, placeHolder -> new
+		// LinkedBlockingQueue<>()).add(m);
 	}
 
 	@Override
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		subMessageMap.computeIfAbsent(type, placeHolder -> new LinkedBlockingQueue<>()).add(m);
-		refMap.computeIfAbsent(m, placeHolder -> new CopyOnWriteArrayList<>()).add(subMessageMap.get(type));
-
+		subMessageMap.computeIfAbsent(type, k -> new LinkedBlockingQueue<>()).add(m);
+		System.out.println(m.getName() + " subscribed to " + type.getName());
 	}
 
 	@Override
@@ -74,42 +64,51 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		BlockingQueue<MicroService> qMS = subMessageMap.get(b);
-		if (qMS != null && !qMS.isEmpty()) {
-			for (MicroService ms : qMS) {
-				BlockingQueue<Message> qMessages = msqMap.get(ms);
-				qMessages.add(b);
+		BlockingQueue<MicroService> qMS = subMessageMap.get(b.getClass());
+		if (qMS != null) {
+			synchronized (qMS) {
+				qMS.forEach(ms -> {
+					BlockingQueue<Message> qMessages = msqMap.get(ms);
+					if (qMessages != null) {
+						qMessages.add(b);
+					}
+				});
 			}
 		}
 	}
 
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-
-		BlockingQueue<MicroService> qMS = subMessageMap.get(e);
-		if (qMS != null && qMS.isEmpty()) {
+		BlockingQueue<MicroService> qMS = subMessageMap.get(e.getClass());
+		if (qMS == null || qMS.isEmpty()) {
 			return null;
 		}
-		MicroService ms = qMS.poll();
-		msqMap.get(ms).add(e);
-		qMS.add(ms); // Ensures that the order of MS will be according to Round Robbin
-		Future<T> future = new Future<>();
-		eventFutureMap.put(e, future);
-		return future;
 
+		Future<T> future = new Future<>();
+		synchronized (qMS) {
+			MicroService ms = qMS.poll();
+			if (ms != null) {
+				BlockingQueue<Message> qMessages = msqMap.get(ms);
+				if (qMessages != null) {
+					qMessages.add(e);
+					qMS.add(ms); // Round-robin logic
+					eventFutureMap.put(e, future);
+				}
+			}
+		}
+		return future;
 	}
 
 	@Override
 	public void register(MicroService m) {
-		msqMap.put(m, new LinkedBlockingQueue<>());
+		msqMap.putIfAbsent(m, new LinkedBlockingQueue<>());
 	}
 
 	@Override
 	public void unregister(MicroService m) {
-		List<Queue<MicroService>> listOfPointers = refMap.get(m);
-		if (listOfPointers != null) {
-			for (Queue<MicroService> q : listOfPointers) {
-				q.remove(m);
+		for (BlockingQueue<MicroService> queue : subMessageMap.values()) {
+			synchronized (queue) {
+				queue.remove(m);
 			}
 		}
 		msqMap.remove(m);

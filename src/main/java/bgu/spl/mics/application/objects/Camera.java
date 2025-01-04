@@ -67,7 +67,7 @@ public class Camera {
         return this.detectedObjectsList;
     }
 
-    public StampedDetectedObjects interval(int tickTime) {
+    public StampedDetectedObjects interval(long tickTime) {
         if (allObjects.isEmpty()) {
             return new StampedDetectedObjects(-2, null);
         }
@@ -76,6 +76,10 @@ public class Camera {
             if (tickTime < obj.getTime() + frequency) {
                 break;
             } else if (tickTime == obj.getTime() + frequency) {
+
+                if (obj.getDetectedObjects().isEmpty()) {
+                    return null;
+                }
                 if (obj.getDetectedObjects().get(0).getID() == "ERROR") {
                     return new StampedDetectedObjects(-1, obj.getDetectedObjects());
                 }

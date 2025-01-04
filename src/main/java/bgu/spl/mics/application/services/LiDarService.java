@@ -30,7 +30,7 @@ public class LiDarService extends MicroService {
      * @param LiDarWorkerTracker A LiDAR Tracker worker object that this service will use to process data.
      */
     private LiDarWorkerTracker liDar;
-    private int timeTick;
+    private long timeTick;
     private StatisticalFolder statisticalFolder;
 
     public LiDarService(LiDarWorkerTracker LiDarWorkerTracker) {
@@ -50,6 +50,7 @@ public class LiDarService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
             timeTick = tickBroadcast.getTime();
+            System.out.println(getName() + "recived time tick " + timeTick);
             List<TrackedObject> listTracked = liDar.CheckIfTimed(timeTick);
             if (listTracked != null) {
                 for (TrackedObject trackedObj : listTracked) {
@@ -76,9 +77,10 @@ public class LiDarService extends MicroService {
             this.terminate(); 
         });
         subscribeEvent(DetectObjectEvent.class, DetectedObjectsEvent -> {
+            System.out.println(getName() + "recived detected object event");
             List<TrackedObject> listTracked = liDar.interval(timeTick, DetectedObjectsEvent);
-            if (listTracked != null){
-
+            if (listTracked != null && !listTracked.isEmpty()){
+                
                 if (listTracked.get(0).getID() == "-1") {
                     liDar.setStatus(STATUS.ERROR);
                     sendBroadcast(new CrashedBroadcast(this.getName(), "Connection to LiDAR lost"));
@@ -94,14 +96,15 @@ public class LiDarService extends MicroService {
                 Future<Boolean> futureObj = sendEvent(new TrackedObjectEvent(listTracked));
                 DetectedObjectsEvent.complete();
                 complete(DetectedObjectsEvent, true);
-                 if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) { // CHECK
-                        System.out.println("Time has elapsed, no services has resolved the event - terminating");
+                 if (futureObj.get(500, TimeUnit.MILLISECONDS) == null) { // CHECK
+                        System.out.println(getName() + " Time has elapsed, no services has resolved the event - terminating");
                             terminate();
                 }
                 // CHECK IF NEED TO DO SOMETHING IF ITS NOT NULL
             }
         });
         liDar.setStatus(STATUS.UP);
+        System.out.println(getName() + "is UP!");
 }
 
 public STATUS getStatus() {

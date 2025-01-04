@@ -44,7 +44,7 @@ public class CameraService extends MicroService {
     @Override
     protected void initialize() {
         subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
-            int currentTime = tickBroadcast.getTime();
+            long currentTime = tickBroadcast.getTime();
             System.out.println(getName() + "recived tick" + currentTime); ///////////
             StampedDetectedObjects stampedObj = camera.interval(currentTime);
             if (stampedObj != null) {
@@ -63,8 +63,8 @@ public class CameraService extends MicroService {
                     DetectObjectEvent ev = new DetectObjectEvent(stampedObj);
                     Future<Boolean> futureObj = sendEvent(ev);
                     statisticalFolder.increasenumDetectedObjects();
-                    if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
-                        System.out.println("Time has elapsed, no services has resolved the event - terminating");
+                    if (futureObj != null && futureObj.get(500, TimeUnit.MILLISECONDS) == null) {
+                        System.out.println(getName() + " Time has elapsed, no services has resolved the event - terminating");
                             terminate();
                     }
                 }

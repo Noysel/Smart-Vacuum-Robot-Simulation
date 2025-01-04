@@ -71,7 +71,7 @@ public class LiDarWorkerTracker {
         return this.lastTrackedObjects;
     }
 
-    public List<TrackedObject> CheckIfTimed(int tickTime) {
+    public List<TrackedObject> CheckIfTimed(long tickTime) {
         LinkedList<TrackedObject> newLastTracked = new LinkedList<>();
         for (TrackedObject trackedObj : notYetTO){
             if (tickTime >= trackedObj.getTime() + frequency) {
@@ -87,7 +87,7 @@ public class LiDarWorkerTracker {
         return null;
     }
 
-    public List<TrackedObject> interval(int tickTime, DetectObjectEvent event) {
+    public List<TrackedObject> interval(long tickTime, DetectObjectEvent event) {
         StampedDetectedObjects stampedObj = event.getDetectedObj();
 
         if (allObj.isEmpty()) {

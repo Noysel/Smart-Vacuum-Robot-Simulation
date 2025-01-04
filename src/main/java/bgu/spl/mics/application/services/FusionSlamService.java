@@ -2,6 +2,7 @@ package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.CrashedBroadcast;
+import bgu.spl.mics.application.messages.KillTimeEvent;
 import bgu.spl.mics.application.messages.PoseEvent;
 import bgu.spl.mics.application.messages.TerminateBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
@@ -45,6 +46,7 @@ public class FusionSlamService extends MicroService {
         subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             numOfServices--;
             if (numOfServices == 0){
+                sendEvent(new KillTimeEvent());
                 terminate();
             }
         });
@@ -54,6 +56,7 @@ public class FusionSlamService extends MicroService {
         });
 
         subscribeEvent(PoseEvent.class, poseEvent -> {
+            complete(poseEvent, true);
             TrackedObjectEvent trackedObjectEvent = fs.setCurrentPose(poseEvent.getPose());
             if (trackedObjectEvent != null) {
                 complete(trackedObjectEvent, true);
@@ -66,6 +69,7 @@ public class FusionSlamService extends MicroService {
             }
         });
         status = STATUS.UP;
+        System.out.println(getName() + "is UP!");
     }
 
     public STATUS getStatus() { //getStatus for the main to know that the service we

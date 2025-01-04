@@ -42,14 +42,21 @@ public class PoseService extends MicroService {
      */
     @Override
     protected void initialize() {
+
         subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
-            gpsimu.increaseCurrentTick();
-            Pose lastPose = gpsimu.getCurrentPose();
-            Future<Boolean> futureObj = sendEvent(new PoseEvent(lastPose));
-            if (futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
-                System.out.println("Time has elapsed, no services has resolved the event - terminating");
-                terminate();
+            if (gpsimu.increaseCurrentTick()) {
+                Pose lastPose = gpsimu.getCurrentPose();
+                Future<Boolean> futureObj = sendEvent(new PoseEvent(lastPose));
+                System.out.println("PoseService sent Pose: " + lastPose.getTime());
+                if (futureObj.get(500, TimeUnit.MILLISECONDS) == null) {
+                    System.out.println("POSE Time has elapsed, no services has resolved the event - terminating");
+                    terminate();
+                }
             }
+            else {
+                sendBroadcast(new TerminateBroadcast(getName()));
+            }
+
         });
         subscribeBroadcast(TerminateBroadcast.class, terminate -> {
             gpsimu.setStatus(STATUS.DOWN);
@@ -61,5 +68,6 @@ public class PoseService extends MicroService {
             terminate();
         });
         gpsimu.setStatus(STATUS.UP);
+        System.out.println(getName() + "is UP!");
     }
 }
