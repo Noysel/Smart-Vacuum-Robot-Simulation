@@ -83,7 +83,7 @@ public class Camera {
                 }
                 for (DetectedObject detectedObj : obj.getDetectedObjects()) {
                     if (detectedObj.getID().equals("ERROR")) {
-                        System.out.println("camera detected error!!!!!!!!!!!!!!");
+                        System.out.println("camera detected error");
                         return new StampedDetectedObjects(-1, obj.getDetectedObjects());
                     }
                 }

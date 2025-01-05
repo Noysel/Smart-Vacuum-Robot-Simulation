@@ -51,6 +51,7 @@ public class CameraService extends MicroService {
                 if (stampedObj.getTime() == -1) {
                     System.out.println(getName() + "DETECTED ERRORR !!!!!!!!!!!!!!!!!!!!!!!!!");
                     camera.setStatus(STATUS.ERROR);
+                    statisticalFolder.setError(stampedObj.getDetectedObjects().get(0).getDescription(), getName());
                     sendBroadcast(new CrashedBroadcast(this.getName(), stampedObj.getDetectedObjects().get(0).getDescription()));
                     terminate();
                     return;
@@ -69,6 +70,7 @@ public class CameraService extends MicroService {
                     } 
                     sendEvent(ev); /// Future<Boolean> futureObj            
                     statisticalFolder.increasenumDetectedObjects();
+                    statisticalFolder.setLastDetectedObj(stampedObj.getDetectedObjects());
                     //if (futureObj != null && futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
                         //System.out.println(getName() + " Future timed out");
                     //}

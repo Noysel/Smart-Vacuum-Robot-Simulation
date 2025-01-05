@@ -74,7 +74,7 @@ public class LiDarService extends MicroService {
                     System.out.println(getName() + " sent trackedObj: " + trackObj.getID() + "(from notYet)");
                 }
                 sendEvent(new TrackedObjectEvent(listTracked, getName())); //  Future<Boolean> futureObj = 
-                
+                statisticalFolder.setlastTrackedObj(listTracked);
                 statisticalFolder.increasenumTrackedObjects();
             }
         });
@@ -101,6 +101,7 @@ public class LiDarService extends MicroService {
             if (listTracked != null && !listTracked.isEmpty()){
                 if (listTracked.get(0).getID() == "-1") {
                     liDar.setStatus(STATUS.ERROR);
+                    statisticalFolder.setError(listTracked.get(0).getDescription(), getName());
                     System.out.println(getName() + " got error detectedObj@@@@@@@@@@@@@@@@@@@");
                     sendBroadcast(new CrashedBroadcast(this.getName(), "Connection to LiDAR lost"));
                     terminate();
@@ -112,6 +113,7 @@ public class LiDarService extends MicroService {
                 sendEvent(new TrackedObjectEvent(listTracked, getName())); //Future<Boolean> futureObj = 
                 
                 statisticalFolder.increasenumTrackedObjects();
+                statisticalFolder.setlastTrackedObj(listTracked);
                 DetectedObjectsEvent.complete();
                 complete(DetectedObjectsEvent, true);
                 //System.out.println(getName() + " completed detectedOBj from listTracked");

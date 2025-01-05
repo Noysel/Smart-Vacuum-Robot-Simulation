@@ -29,12 +29,15 @@ public class FusionSlamService extends MicroService {
     private FusionSlam fs;
     private STATUS status;
     private int numOfServices;
+    private StatisticalFolder statisticalFolder;
+
 
     public FusionSlamService(FusionSlam fusionSlam, int numOfServices) {
         super("FusionSlamService");
         this.fs = fusionSlam;
         this.status = STATUS.DOWN;
         this.numOfServices = numOfServices;
+        statisticalFolder = StatisticalFolder.getInstance();
     }
 
     /**
@@ -48,6 +51,7 @@ public class FusionSlamService extends MicroService {
         subscribeBroadcast(TerminateBroadcast.class, TerminateBroadcast -> {
             if (TerminateBroadcast.getSender().equals("TimeService")) {
                 sendBroadcast(new TerminateBroadcast(getName()));
+                statisticalFolder.setWorldMap(fs.getWorldMap());
                 terminate();
             }
 
@@ -57,7 +61,8 @@ public class FusionSlamService extends MicroService {
                 if (numOfServices == 0) {
                     sendEvent(new KillTimeEvent());
                     sendBroadcast(new TerminateBroadcast(getName()));
-                    // CREATE OUTPUT_FILE JSON
+                    statisticalFolder.setWorldMap(fs.getWorldMap());
+                    statisticalFolder.createOutputFile("example_input_2\\output_file.json");
                     terminate();
                 }
             }
@@ -65,8 +70,9 @@ public class FusionSlamService extends MicroService {
         });
 
         subscribeBroadcast(CrashedBroadcast.class, Crashed -> {
-            terminate();
             sendEvent(new KillTimeEvent());
+            statisticalFolder.createOutputFile("example_input_2\\output_file.json");
+            terminate();
         });
 
         subscribeEvent(PoseEvent.class, poseEvent -> {

@@ -7,7 +7,7 @@ import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
 
 import java.util.List;
-import bgu.spl.mics.application.objects.Pose;
+
 import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.DetectObjectEvent;
 import bgu.spl.mics.application.messages.PoseEvent;
@@ -29,10 +29,13 @@ public class PoseService extends MicroService {
      */
 
     private GPSIMU gpsimu;
+    private StatisticalFolder statisticalFolder;
+
 
     public PoseService(GPSIMU gpsimu) {
         super("PoseService");
         this.gpsimu = gpsimu;
+        this.statisticalFolder = StatisticalFolder.getInstance();
     }
 
     /**
@@ -47,6 +50,7 @@ public class PoseService extends MicroService {
             if (gpsimu.increaseCurrentTick()) {
                 Pose lastPose = gpsimu.getCurrentPose();
                 sendEvent(new PoseEvent(lastPose)); //Future<Boolean> futureObj = 
+                statisticalFolder.setPoses(gpsimu.getPoses());
                 System.out.println("PoseService sent Pose: " + lastPose.getTime());
             }
             else {

@@ -34,10 +34,10 @@ public class FusionSlam {
     }
 
     public FusionSlam() {
-        this.landMarks = new CopyOnWriteArrayList<>();
-        this.poses = new CopyOnWriteArrayList<>();
+        this.landMarks = new LinkedList<>();
+        this.poses = new LinkedList<>();
         this.currentPose = null;
-        this.notYetTO = new CopyOnWriteArrayList<>();
+        this.notYetTO = new LinkedList<>();
         this.statisticalFolder = StatisticalFolder.getInstance();
     }
 
@@ -71,25 +71,33 @@ public class FusionSlam {
         double yG = (sinYaw * coordinates.get(0)) + (cosYaw * coordinates.get(1)) + Detectedpose.getY();
         return new CloudPoint(xG, yG);
     }
-
-    public boolean insertLandMark(TrackedObjectEvent trackedObjEvent) { // return true if inserting new LandMark
+    public boolean insertLandMark(TrackedObjectEvent trackedObjEvent) {
         List<TrackedObject> trackedObjList = trackedObjEvent.getTrackedObjectList();
         if (!trackedObjList.isEmpty() && currentPose.getTime() < trackedObjList.get(0).getTime()) {
             notYetTO.add(trackedObjEvent);
             return false;
         }
+    
+        // Temporary list to store updated landmarks
+        List<LandMark> updatedLandMarks = new LinkedList<>();
+    
         for (TrackedObject trackedObj : trackedObjList) {
             boolean needNewLandMark = true;
             List<CloudPoint> globalCoordinates = new LinkedList<>();
+    
             for (Pose pose : poses) {
                 if (pose.getTime() == trackedObj.getTime()) {
                     for (List<Double> point : trackedObj.getCoordinates()) {
                         globalCoordinates.add(ConvertCoordinates(point, pose));
                     }
+    
                     for (LandMark landMark : landMarks) {
                         if (trackedObj.getID().equals(landMark.getID())) {
+                            List<CloudPoint> newCoordinates = new LinkedList<>();
+    
                             Iterator<CloudPoint> LMIterator = landMark.getCoordinates().iterator();
                             Iterator<CloudPoint> GIterator = globalCoordinates.iterator();
+    
                             while (GIterator.hasNext()) {
                                 if (LMIterator.hasNext()) {
                                     CloudPoint trackedP = GIterator.next();
@@ -98,25 +106,36 @@ public class FusionSlam {
                                     double landMarkY = landMarkP.getY();
                                     landMarkP.setX((landMarkX + trackedP.getX()) / 2);
                                     landMarkP.setY((landMarkY + trackedP.getY()) / 2);
-                                    System.out.println("********************FUSION SLAM: update avg");
+                                    newCoordinates.add(landMarkP);
                                 } else {
-                                    landMark.addCoordinates(GIterator.next());
-                                    System.out.println(
-                                            "***********************FUSION SLAM: added new cloudpoint to landmark");
+                                    newCoordinates.add(GIterator.next());
                                 }
                             }
+                            updatedLandMarks.add(new LandMark(landMark.getID(), landMark.getDescription(), newCoordinates));
                             needNewLandMark = false;
                         }
                     }
                 }
             }
+    
             if (needNewLandMark) {
                 landMarks.add(new LandMark(trackedObj.getID(), trackedObj.getDescription(), globalCoordinates));
                 System.out.println("********************FUSION SLAM: created new LandMark: " + trackedObj.getID());
                 statisticalFolder.increasenumLandMarks();
             }
         }
-
+    
+        // Update the main landmark list with the new updates
+        for (LandMark updatedLandMark : updatedLandMarks) {
+            landMarks.removeIf(lm -> lm.getID().equals(updatedLandMark.getID()));
+            landMarks.add(updatedLandMark);
+        }
+    
         return true;
     }
+
+    public List<LandMark> getWorldMap() {
+        return landMarks;
+    }
+    
 }

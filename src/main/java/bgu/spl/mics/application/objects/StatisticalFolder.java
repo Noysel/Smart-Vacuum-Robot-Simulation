@@ -2,6 +2,12 @@ package bgu.spl.mics.application.objects;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
 import bgu.spl.mics.MessageBusImpl;
 
 /**
@@ -15,6 +21,11 @@ public class StatisticalFolder {
     private AtomicInteger numDetectedObjects;
     private AtomicInteger numTrackedObjects;
     private AtomicInteger numLandMarks;
+    private String error;
+    private String faultySensor;
+    private List<LandMark> worldMap;
+    private LastFrames lastFrames = new LastFrames();;
+    private List<Pose> poses;
 
     private static class SingletonHolder {
         private volatile static StatisticalFolder instance = new StatisticalFolder();
@@ -42,6 +53,18 @@ public class StatisticalFolder {
         return systemRunTime.get();
     }
 
+    public void setError(String description, String sender) {
+        error = description;
+        faultySensor = sender;
+    }
+
+    public boolean isError() {
+        if (error == null) {
+            return false;
+        }
+        return true;
+    }
+
     public int getnumDetectedObjects() {
         return numDetectedObjects.get();
     }
@@ -60,8 +83,7 @@ public class StatisticalFolder {
         do {
             oldVal = systemRunTime.get();
             newVal = oldVal + 1;
-        }
-        while (!systemRunTime.compareAndSet(oldVal, newVal));
+        } while (!systemRunTime.compareAndSet(oldVal, newVal));
     }
 
     public void increasenumDetectedObjects() {
@@ -70,8 +92,7 @@ public class StatisticalFolder {
         do {
             oldVal = numDetectedObjects.get();
             newVal = oldVal + 1;
-        }
-        while (!numDetectedObjects.compareAndSet(oldVal, newVal));
+        } while (!numDetectedObjects.compareAndSet(oldVal, newVal));
     }
 
     public void increasenumTrackedObjects() {
@@ -80,8 +101,7 @@ public class StatisticalFolder {
         do {
             oldVal = numTrackedObjects.get();
             newVal = oldVal + 1;
-        }
-        while (!numTrackedObjects.compareAndSet(oldVal, newVal));
+        } while (!numTrackedObjects.compareAndSet(oldVal, newVal));
     }
 
     public void increasenumLandMarks() {
@@ -90,6 +110,114 @@ public class StatisticalFolder {
         do {
             oldVal = numLandMarks.get();
             newVal = oldVal + 1;
+        } while (!numLandMarks.compareAndSet(oldVal, newVal));
+    }
+
+    public void setLastDetectedObj(List<DetectedObject> lastDetectedObj) {
+        lastFrames.setLastDetectedObj(lastDetectedObj);
+    }
+
+    public void setlastTrackedObj(List<TrackedObject> lastTrackedObj) {
+        lastFrames.setlastTrackedObj(lastTrackedObj);
+    }
+
+    public void setPoses(List<Pose> poses) {
+        this.poses = poses;
+    }
+
+    public void setWorldMap(List<LandMark> worldMap) {
+        this.worldMap = worldMap;
+    }
+
+    public void createOutputFile(String filename) {
+        System.out.println(isError() + ", " + error + "IS ERROR @@@@@@@@@@@@@@@@@@@@");
+
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        try (FileWriter writer = new FileWriter(filename)) {
+            if (isError()) {
+                ErrorOutputData errorData = new ErrorOutputData(
+                    error,
+                    faultySensor,
+                    lastFrames,
+                    poses,
+                    new Statistics(systemRunTime.get(), numDetectedObjects.get(), numTrackedObjects.get(), numLandMarks.get(), worldMap)
+                );
+                gson.toJson(errorData, writer);
+            } else {
+                OutputData data = new OutputData(
+                    systemRunTime.get(),
+                    numDetectedObjects.get(),
+                    numTrackedObjects.get(),
+                    numLandMarks.get(),
+                    worldMap
+                );
+                gson.toJson(data, writer);
+            }
+            System.out.println("Output JSON has been written to " + filename);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        while (!numLandMarks.compareAndSet(oldVal, newVal));    }
+    }
+
+    private class OutputData {
+        int systemRuntime;
+        int numDetectedObjects;
+        int numTrackedObjects;
+        int numLandmarks;
+        List<LandMark> landMarks;
+
+        public OutputData(int systemRuntime, int numDetectedObjects, int numTrackedObjects, int numLandmarks, List<LandMark> landMarks) {
+            this.systemRuntime = systemRuntime;
+            this.numDetectedObjects = numDetectedObjects;
+            this.numTrackedObjects = numTrackedObjects;
+            this.numLandmarks = numLandmarks;
+            this.landMarks = landMarks;
+        }
+    }
+
+    private class ErrorOutputData {
+        String error;
+        String faultySensor;
+        LastFrames lastFrames;
+        List<Pose> poses;
+        Statistics statistics;
+
+        public ErrorOutputData(String error, String faultySensor, LastFrames lastFrames, List<Pose> poses, Statistics statistics) {
+            this.error = error;
+            this.faultySensor = faultySensor;
+            this.lastFrames = lastFrames;
+            this.poses = poses;
+            this.statistics = statistics;
+        }
+    }
+
+    private class Statistics {
+        int systemRuntime;
+        int numDetectedObjects;
+        int numTrackedObjects;
+        int numLandmarks;
+        List<LandMark> landMarks;
+
+        public Statistics(int systemRuntime, int numDetectedObjects, int numTrackedObjects, int numLandmarks, List<LandMark> landMarks) {
+            this.systemRuntime = systemRuntime;
+            this.numDetectedObjects = numDetectedObjects;
+            this.numTrackedObjects = numTrackedObjects;
+            this.numLandmarks = numLandmarks;
+            this.landMarks = landMarks;
+        }
+    }
+}
+
+class LastFrames {
+    private List<DetectedObject> lastDetectedObj;
+    private List<TrackedObject> lastTrackedObj;
+
+    public void setLastDetectedObj(List<DetectedObject> lastDetectedObj) {
+        this.lastDetectedObj = lastDetectedObj;
+    }
+
+    public void setlastTrackedObj(List<TrackedObject> lastTrackedObj) {
+        this.lastTrackedObj = lastTrackedObj;
+    }
 }

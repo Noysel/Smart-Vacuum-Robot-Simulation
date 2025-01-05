@@ -51,6 +51,10 @@ public class GPSIMU {
         return lastPose;
     }
 
+    public List<Pose> getPoses() {
+        return poseList;
+    }
+
     public String toString() {
         return "pose list: " + poseList;
     }
