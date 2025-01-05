@@ -16,7 +16,7 @@
   "LiDarWorkers": {
     "LidarConfigurations":[{
       "id": 1,
-      "frequency": 4
+      "frequency": 0
     },
     {
       "id": 2,

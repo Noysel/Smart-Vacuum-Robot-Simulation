@@ -49,30 +49,37 @@ public class CameraService extends MicroService {
             StampedDetectedObjects stampedObj = camera.interval(currentTime);
             if (stampedObj != null) {
                 if (stampedObj.getTime() == -1) {
+                    System.out.println(getName() + "DETECTED ERRORR !!!!!!!!!!!!!!!!!!!!!!!!!");
                     camera.setStatus(STATUS.ERROR);
                     sendBroadcast(new CrashedBroadcast(this.getName(), stampedObj.getDetectedObjects().get(0).getDescription()));
                     terminate();
+                    return;
                 }
 
                 if (stampedObj.getTime() == -2) {
                     camera.setStatus(STATUS.DOWN);
                     sendBroadcast(new TerminateBroadcast(getName()));
-                    terminate();
+                    return;
                 }
 
-                    DetectObjectEvent ev = new DetectObjectEvent(stampedObj, this.getName()) ;
-                    Future<Boolean> futureObj = sendEvent(ev);
-                    System.out.println(getName() + " sent detected object");
+                    DetectObjectEvent ev = new DetectObjectEvent(stampedObj, this.getName());
+                    System.out.println("CAMERA STEMP SIZE:  " + stampedObj.getDetectedObjects().size());
+                    for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
+                        System.out.println(getName() + " Sent DetectObj: " + detObj.getID() + ", detection time: " + stampedObj.getTime());
+                    } 
+                    sendEvent(ev); /// Future<Boolean> futureObj            
                     statisticalFolder.increasenumDetectedObjects();
-                    if (futureObj != null && futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
-                        System.out.println(getName() + " Future timed out");
-                    }
+                    //if (futureObj != null && futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
+                        //System.out.println(getName() + " Future timed out");
+                    //}
                 }
             
         });
         this.subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
-            camera.setStatus(STATUS.DOWN);
-            this.terminate();
+            if (Terminate.getSender().equals("FusionSlamService")) {
+                camera.setStatus(STATUS.DOWN);
+                terminate();
+            }
         });
         this.subscribeBroadcast(CrashedBroadcast.class, Terminate -> {
             camera.setStatus(STATUS.DOWN);

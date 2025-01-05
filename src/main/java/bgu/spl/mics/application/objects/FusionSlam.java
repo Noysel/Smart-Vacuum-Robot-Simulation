@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Iterator;
 
 import bgu.spl.mics.MessageBusImpl;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import bgu.spl.mics.application.messages.TrackedObjectEvent;
 
 /**
@@ -32,10 +34,10 @@ public class FusionSlam {
     }
 
     public FusionSlam() {
-        this.landMarks = new LinkedList<>();
-        this.poses = new LinkedList<>();
+        this.landMarks = new CopyOnWriteArrayList<>();
+        this.poses = new CopyOnWriteArrayList<>();
         this.currentPose = null;
-        this.notYetTO = new LinkedList<>();
+        this.notYetTO = new CopyOnWriteArrayList<>();
         this.statisticalFolder = StatisticalFolder.getInstance();
     }
 
@@ -85,7 +87,7 @@ public class FusionSlam {
                         globalCoordinates.add(ConvertCoordinates(point, pose));
                     }
                     for (LandMark landMark : landMarks) {
-                        if (trackedObj.getID() == landMark.getID()) {
+                        if (trackedObj.getID().equals(landMark.getID())) {
                             Iterator<CloudPoint> LMIterator = landMark.getCoordinates().iterator();
                             Iterator<CloudPoint> GIterator = globalCoordinates.iterator();
                             while (GIterator.hasNext()) {
@@ -96,20 +98,25 @@ public class FusionSlam {
                                     double landMarkY = landMarkP.getY();
                                     landMarkP.setX((landMarkX + trackedP.getX()) / 2);
                                     landMarkP.setY((landMarkY + trackedP.getY()) / 2);
+                                    System.out.println("********************FUSION SLAM: update avg");
                                 } else {
                                     landMark.addCoordinates(GIterator.next());
+                                    System.out.println(
+                                            "***********************FUSION SLAM: added new cloudpoint to landmark");
                                 }
                             }
                             needNewLandMark = false;
                         }
                     }
-                    if (needNewLandMark) {
-                        landMarks.add(new LandMark(trackedObj.getID(), trackedObj.getDescription(), globalCoordinates));
-                        statisticalFolder.increasenumLandMarks();
-                    }
                 }
             }
+            if (needNewLandMark) {
+                landMarks.add(new LandMark(trackedObj.getID(), trackedObj.getDescription(), globalCoordinates));
+                System.out.println("********************FUSION SLAM: created new LandMark: " + trackedObj.getID());
+                statisticalFolder.increasenumLandMarks();
+            }
         }
+
         return true;
     }
 }

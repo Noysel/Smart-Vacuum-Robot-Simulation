@@ -81,19 +81,20 @@ public class Camera {
                     System.out.println("cam null - is empty");
                     return null;
                 }
-                if (obj.getDetectedObjects().get(0).getID() == "ERROR") {
-                    System.out.println("camera error");
-                    return new StampedDetectedObjects(-1, obj.getDetectedObjects());
+                for (DetectedObject detectedObj : obj.getDetectedObjects()) {
+                    if (detectedObj.getID().equals("ERROR")) {
+                        System.out.println("camera detected error!!!!!!!!!!!!!!");
+                        return new StampedDetectedObjects(-1, obj.getDetectedObjects());
+                    }
                 }
                 detectedObjectsList.add(obj);
                 allObjects.remove(obj);
-                System.out.println("cam returned obj");
-
+                //System.out.println("cam returned obj");
                 return obj;
             }
 
         }
-        System.out.println("cam null after for");
+        //System.out.println("cam null after for");
         return null;
     }
 

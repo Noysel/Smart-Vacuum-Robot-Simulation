@@ -46,12 +46,8 @@ public class PoseService extends MicroService {
         subscribeBroadcast(TickBroadcast.class, (Callback<TickBroadcast>) tickBroadcast -> {
             if (gpsimu.increaseCurrentTick()) {
                 Pose lastPose = gpsimu.getCurrentPose();
-                Future<Boolean> futureObj = sendEvent(new PoseEvent(lastPose));
+                sendEvent(new PoseEvent(lastPose)); //Future<Boolean> futureObj = 
                 System.out.println("PoseService sent Pose: " + lastPose.getTime());
-                if (futureObj.get(500, TimeUnit.MILLISECONDS) == null) {
-                    System.out.println("POSE Time has elapsed, no services has resolved the event - terminating");
-                    terminate();
-                }
             }
             else {
                 sendBroadcast(new TerminateBroadcast(getName()));
@@ -59,8 +55,10 @@ public class PoseService extends MicroService {
 
         });
         subscribeBroadcast(TerminateBroadcast.class, terminate -> {
-            gpsimu.setStatus(STATUS.DOWN);
-            terminate();
+            if (terminate.getSender().equals("FusionSlamService")) {
+                gpsimu.setStatus(STATUS.DOWN);
+                terminate();
+            }
         });
 
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {

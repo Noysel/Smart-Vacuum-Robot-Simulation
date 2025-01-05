@@ -8,11 +8,17 @@ import java.util.List;
 public class TrackedObjectEvent implements Event<Boolean> {
 
     private List<TrackedObject> listOfTracked;
-    public TrackedObjectEvent(List<TrackedObject> listOfTracked) {
+    private String sender;
+    public TrackedObjectEvent(List<TrackedObject> listOfTracked, String sender) {
         this.listOfTracked = listOfTracked;
+        this.sender = sender;
     }
     public List<TrackedObject> getTrackedObjectList() {
         return listOfTracked;
+    }
+    
+    public String getSedner() {
+        return sender;
     }
 
 }

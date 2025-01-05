@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import bgu.spl.mics.application.messages.DetectObjectEvent;
@@ -31,16 +32,16 @@ public class LiDarWorkerTracker {
         this.frequency = frequency;
         this.status = STATUS.DOWN;
         this.lastTrackedObjects = new LinkedList<TrackedObject>();
-        this.allObj = LiDarDataBase.getInstance("lidar_data.json").getStampedCloudPoints();
+        this.allObj = null;
         this.notYetTO = new LinkedList<>();
 
     }
 
     public void initDefault(String filePath) {
-        if (status == null){
+        if (status == null) {
             status = STATUS.DOWN;
         }
-        if (lastTrackedObjects == null){
+        if (lastTrackedObjects == null) {
             lastTrackedObjects = new LinkedList<>();
         }
         if (allObj == null) {
@@ -67,20 +68,29 @@ public class LiDarWorkerTracker {
         this.status = status;
     }
 
+    public int getLidarsDataBaseSize() {
+        return allObj.size();
+    }
+
     public List<TrackedObject> getLastTrDetectedObjects() {
         return this.lastTrackedObjects;
     }
 
     public List<TrackedObject> CheckIfTimed(long tickTime) {
         LinkedList<TrackedObject> newLastTracked = new LinkedList<>();
-        for (TrackedObject trackedObj : notYetTO){
+        for (TrackedObject trackedObj : notYetTO) {
             if (tickTime >= trackedObj.getTime() + frequency) {
-                
+
+                if (trackedObj.getID().equals("ERROR")) {
+                    List<TrackedObject> errorList = new LinkedList<>();
+                    errorList.add(new TrackedObject("-1", 0, null, null));
+                    return errorList;
+                }
                 newLastTracked.add(trackedObj);
                 notYetTO.remove(trackedObj);
             }
         }
-        if (!newLastTracked.isEmpty()){
+        if (!newLastTracked.isEmpty()) {
             lastTrackedObjects = newLastTracked;
             return lastTrackedObjects;
         }
@@ -89,47 +99,43 @@ public class LiDarWorkerTracker {
 
     public List<TrackedObject> interval(long tickTime, DetectObjectEvent event) {
         StampedDetectedObjects stampedObj = event.getDetectedObj();
+        System.out.println("StampedObj event's size: " + stampedObj.getDetectedObjects().size());
 
-        if (allObj.isEmpty()) {
-            List<TrackedObject> terminationList = new LinkedList<>();
-            terminationList.add(new TrackedObject("-2", 0, null, null));
-            return terminationList;
-        }
-        for (StampedCloudPoints StampedCPbj : allObj) {
-            if (StampedCPbj.getTime() == stampedObj.getTime() + frequency && StampedCPbj.getID() == "ERROR") {
-                List<TrackedObject> errorList = new LinkedList<>();
-                errorList.add(new TrackedObject("-1", 0, null, null));
-                return errorList;
-            }
-
-            if (tickTime < StampedCPbj.getTime() + frequency) {
-                for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
-                    if (detObj.getID() == StampedCPbj.getID()) {
-                        TrackedObject trObj = new TrackedObject(StampedCPbj.getID(), StampedCPbj.getTime(), detObj.getDescription(), StampedCPbj.geCloudPoints(), event);
+        LinkedList<TrackedObject> newLastTracked = new LinkedList<>();
+        for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
+            System.out.println(detObj.getID() + " Recived by LiDar " + this.ID);
+            for (StampedCloudPoints cloudPoints : allObj) {
+                if (cloudPoints.getID().equals(detObj.getID()) && stampedObj.getTime() == cloudPoints.getTime() || cloudPoints.getID().equals("ERROR")) {
+                    if (tickTime < cloudPoints.getTime()) {
+                        TrackedObject trObj = new TrackedObject(cloudPoints.getID(), cloudPoints.getTime(),
+                                detObj.getDescription(), cloudPoints.geCloudPoints(), event);
                         notYetTO.add(trObj);
-                        allObj.remove(StampedCPbj);
+                        break;
+                    } else {
+                        if (cloudPoints.getID().equals("ERROR")) {
+                            List<TrackedObject> errorList = new LinkedList<>();
+                            errorList.add(new TrackedObject("-1", 0, null, null));
+                            return errorList; // Check if lastTracked should be the errorList
+                        } else {
+                            TrackedObject trObj = new TrackedObject(cloudPoints.getID(), cloudPoints.getTime(),
+                                    detObj.getDescription(), cloudPoints.geCloudPoints());
+                            newLastTracked.add(trObj);
+                            break;
+                        }
                     }
                 }
             }
-            else {
-                LinkedList<TrackedObject> newLastTracked = new LinkedList<>();
-                for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
-                    if (detObj.getID() == StampedCPbj.getID() && stampedObj.getTime() == StampedCPbj.getTime()) {
-                        TrackedObject trObj = new TrackedObject(StampedCPbj.getID(), StampedCPbj.getTime(), detObj.getDescription(), StampedCPbj.geCloudPoints());
-                        newLastTracked.add(trObj);
-                        allObj.remove(StampedCPbj);
-                    }
-                }
-                if (newLastTracked != null) {
-                    lastTrackedObjects = newLastTracked;   
-                }
-                return lastTrackedObjects;
-            }
+            
+        }
+        if (newLastTracked != null) {
+            lastTrackedObjects = newLastTracked;
+            return newLastTracked;
         }
         return null;
     }
 
     public String toString() {
-        return ("id:" + ID + ", frequency:" + frequency + ", status:" + status + ", lastTracked:" + lastTrackedObjects + ", ollObj: " + allObj.size()+ ", notYet:" + notYetTO); 
+        return ("id:" + ID + ", frequency:" + frequency + ", status:" + status + ", lastTracked:" + lastTrackedObjects
+                + ", ollObj: " + allObj.size() + ", notYet:" + notYetTO);
     }
 }

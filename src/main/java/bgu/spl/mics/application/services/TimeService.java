@@ -41,6 +41,7 @@ public class TimeService extends MicroService {
     @Override
     protected void initialize() {
 
+
         subscribeEvent(KillTimeEvent.class, killTime -> {
             terminate();
         });
@@ -58,7 +59,7 @@ public class TimeService extends MicroService {
                 }
             }
             else {
-                terminate();
+                sendBroadcast(new TerminateBroadcast(getName()));
             }
         });
         System.out.println("Tick: " + currentTick);

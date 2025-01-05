@@ -88,19 +88,24 @@ public class Main {
          * System.out.println(fusionSlamServ.getStatus());
          */
         Configuration conf = InputParser.parseConfiguration("example_input_2\\configuration_file.json");
+        
+
+        
         Thread cameraThread1 = new Thread(new CameraService(conf.getCamerasConfiguration().get(0)));
-       // Thread cameraThread2 = new Thread(new CameraService(conf.getCamerasConfiguration().get(1)));
+        // Thread cameraThread2 = new Thread(new
+        // CameraService(conf.getCamerasConfiguration().get(1)));
         Thread timeThread = new Thread(new TimeService(conf.getTickTime(), conf.getDuration()));
-        Thread Lidar1 = new Thread(new LiDarService(conf.getLidarConfigurations().get(0)));
-       // Thread Lidar2 = new Thread(new LiDarService(conf.getLidarConfigurations().get(1)));
+        Thread Lidar1Thread = new Thread(new LiDarService(conf.getLidarConfigurations().get(0)));
+        // Thread Lidar2 = new Thread(new
+        // LiDarService(conf.getLidarConfigurations().get(1)));
         Thread poseThread = new Thread(new PoseService(new GPSIMU(conf.getPoseJsonFile())));
         Thread fusionSlamThread = new Thread(new FusionSlamService(new FusionSlam(), 3));
 
         // Start the threads
         cameraThread1.start();
-      //  cameraThread2.start();
-        Lidar1.start();
-     //   Lidar2.start();
+        // cameraThread2.start();
+        Lidar1Thread.start();
+        // Lidar2.start();
         poseThread.start();
         fusionSlamThread.start();
         try {
@@ -109,6 +114,14 @@ public class Main {
             e.printStackTrace();
         }
         timeThread.start();
+
+        try {
+            fusionSlamThread.join();
+            timeThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

@@ -84,12 +84,11 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
 		BlockingQueue<MicroService> qMS = subMessageMap.get(e.getClass());
-		if (qMS == null || qMS.isEmpty()) {
-			return null;
-		}
-
 		Future<T> future = new Future<>();
 		synchronized (qMS) {
+			if (qMS == null || qMS.isEmpty()) {
+				return null;
+			}
 			MicroService ms = qMS.poll();
 			if (ms == null) {
 				System.err.println("No MicroService available to handle event: " + e.getClass().getName());
@@ -101,7 +100,7 @@ public class MessageBusImpl implements MessageBus {
 					System.out.println(ms.getName()+ "Queue is null for " + e.getClass());
 				}
 				if (qMessages != null) {
-					System.out.println(e.getClass() + " added to: " + ms.getName());
+					//System.out.println(e.getClass() + " added to: " + ms.getName());
 					qMessages.add(e);
 					qMS.add(ms); // Round-robin logic
 					eventFutureMap.put(e, future);
@@ -132,7 +131,7 @@ public class MessageBusImpl implements MessageBus {
 			throw new IllegalStateException();
 		}
 		BlockingQueue<Message> queue = msqMap.get(m);
-		System.out.println(m.getName() + " Waiting Queue size: " + queue.size());
+		//System.out.println(m.getName() + " Waiting Queue size: " + queue.size());
 		return queue.take(); // This will block until a message is available.
 	}
 }
