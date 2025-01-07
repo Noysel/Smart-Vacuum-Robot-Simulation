@@ -71,7 +71,8 @@ public class FusionSlamService extends MicroService {
 
         subscribeBroadcast(CrashedBroadcast.class, Crashed -> {
             sendEvent(new KillTimeEvent());
-            statisticalFolder.createOutputFile("example_input_2\\output_file.json");
+            statisticalFolder.setWorldMap(fs.getWorldMap());
+            statisticalFolder.createOutputFile("example_input_2\\OutPutError.json");
             terminate();
         });
 

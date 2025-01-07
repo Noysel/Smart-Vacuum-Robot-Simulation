@@ -50,7 +50,7 @@ public class PoseService extends MicroService {
             if (gpsimu.increaseCurrentTick()) {
                 Pose lastPose = gpsimu.getCurrentPose();
                 sendEvent(new PoseEvent(lastPose)); //Future<Boolean> futureObj = 
-                statisticalFolder.setPoses(gpsimu.getPoses());
+                statisticalFolder.addPose(lastPose);
                 System.out.println("PoseService sent Pose: " + lastPose.getTime());
             }
             else {

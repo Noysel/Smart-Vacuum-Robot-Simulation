@@ -7,6 +7,7 @@ import com.google.gson.GsonBuilder;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
 import bgu.spl.mics.MessageBusImpl;
 
@@ -25,7 +26,7 @@ public class StatisticalFolder {
     private String faultySensor;
     private List<LandMark> worldMap;
     private LastFrames lastFrames = new LastFrames();;
-    private List<Pose> poses;
+    private List<Pose> poses = new LinkedList<>();
 
     private static class SingletonHolder {
         private volatile static StatisticalFolder instance = new StatisticalFolder();
@@ -40,6 +41,7 @@ public class StatisticalFolder {
         this.numDetectedObjects = new AtomicInteger(numDetectedObjects);
         this.numTrackedObjects = new AtomicInteger(numTrackedObjects);
         this.numLandMarks = new AtomicInteger(numLandMarks);
+        //this.poses = new LinkedList<>();
     }
 
     public StatisticalFolder() {
@@ -121,8 +123,8 @@ public class StatisticalFolder {
         lastFrames.setlastTrackedObj(lastTrackedObj);
     }
 
-    public void setPoses(List<Pose> poses) {
-        this.poses = poses;
+    public void addPose(Pose lastPose) {
+        this.poses.add(lastPose);
     }
 
     public void setWorldMap(List<LandMark> worldMap) {
@@ -141,7 +143,8 @@ public class StatisticalFolder {
                     faultySensor,
                     lastFrames,
                     poses,
-                    new Statistics(systemRunTime.get(), numDetectedObjects.get(), numTrackedObjects.get(), numLandMarks.get(), worldMap)
+                    new Statistics(systemRunTime.get(), numDetectedObjects.get(), numTrackedObjects.get(), numLandMarks.get(), worldMap),
+                    worldMap
                 );
                 gson.toJson(errorData, writer);
             } else {
@@ -182,13 +185,16 @@ public class StatisticalFolder {
         LastFrames lastFrames;
         List<Pose> poses;
         Statistics statistics;
+        List<LandMark> landMarks;
 
-        public ErrorOutputData(String error, String faultySensor, LastFrames lastFrames, List<Pose> poses, Statistics statistics) {
+
+        public ErrorOutputData(String error, String faultySensor, LastFrames lastFrames, List<Pose> poses, Statistics statistics, List<LandMark> landMarks) {
             this.error = error;
             this.faultySensor = faultySensor;
             this.lastFrames = lastFrames;
             this.poses = poses;
             this.statistics = statistics;
+            this.landMarks = landMarks;
         }
     }
 
@@ -210,14 +216,14 @@ public class StatisticalFolder {
 }
 
 class LastFrames {
-    private List<DetectedObject> lastDetectedObj;
-    private List<TrackedObject> lastTrackedObj;
+    private volatile List<DetectedObject> lastDetectedObj;
+    private volatile List<TrackedObject> lastTrackedObj;
 
-    public void setLastDetectedObj(List<DetectedObject> lastDetectedObj) {
+    public synchronized void setLastDetectedObj(List<DetectedObject> lastDetectedObj) {
         this.lastDetectedObj = lastDetectedObj;
     }
 
-    public void setlastTrackedObj(List<TrackedObject> lastTrackedObj) {
+    public synchronized void setlastTrackedObj(List<TrackedObject> lastTrackedObj) {
         this.lastTrackedObj = lastTrackedObj;
     }
 }

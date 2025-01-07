@@ -8,12 +8,10 @@ public class CloudPoint {
 
     private double x;
     private double y;
-    private double z;
 
     public CloudPoint(double x, double y) {
         this.x = x;
         this.y = y;
-        this.z = 0.104;
     }
 
     public double getX() {
@@ -22,16 +20,13 @@ public class CloudPoint {
     public double getY() {
         return y;
     }
-    public double getZ() {
-        return z;
-    }
 
     public void setX(double newX) {
         x = newX;
     }
 
     public void setY(double newY) {
-        x = newY;
+        y = newY;
     }
 
     public String toString() {

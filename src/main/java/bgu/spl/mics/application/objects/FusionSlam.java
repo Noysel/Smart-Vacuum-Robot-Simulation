@@ -66,7 +66,7 @@ public class FusionSlam {
     public CloudPoint ConvertCoordinates(List<Double> coordinates, Pose Detectedpose) {
         double radYaw = Math.toRadians(Detectedpose.getYaw());
         double cosYaw = Math.cos(radYaw);
-        double sinYaw = Math.sin(cosYaw);
+        double sinYaw = Math.sin(radYaw);
         double xG = (cosYaw * coordinates.get(0)) - (sinYaw * coordinates.get(1)) + Detectedpose.getX();
         double yG = (sinYaw * coordinates.get(0)) + (cosYaw * coordinates.get(1)) + Detectedpose.getY();
         return new CloudPoint(xG, yG);
@@ -113,6 +113,7 @@ public class FusionSlam {
                             }
                             updatedLandMarks.add(new LandMark(landMark.getID(), landMark.getDescription(), newCoordinates));
                             needNewLandMark = false;
+                            break;
                         }
                     }
                 }

@@ -51,10 +51,14 @@ public class CameraService extends MicroService {
                 if (stampedObj.getTime() == -1) {
                     System.out.println(getName() + "DETECTED ERRORR !!!!!!!!!!!!!!!!!!!!!!!!!");
                     camera.setStatus(STATUS.ERROR);
-                    statisticalFolder.setError(stampedObj.getDetectedObjects().get(0).getDescription(), getName());
-                    sendBroadcast(new CrashedBroadcast(this.getName(), stampedObj.getDetectedObjects().get(0).getDescription()));
-                    terminate();
-                    return;
+                    for (DetectedObject detObj : stampedObj.getDetectedObjects()) {
+                        if (detObj.getID().equals("ERROR")) {
+                            statisticalFolder.setError(detObj.getDescription(), getName());
+                            sendBroadcast(new CrashedBroadcast(this.getName(), detObj.getDescription()));
+                            terminate();
+                            return;
+                        }
+                    }
                 }
 
                 if (stampedObj.getTime() == -2) {

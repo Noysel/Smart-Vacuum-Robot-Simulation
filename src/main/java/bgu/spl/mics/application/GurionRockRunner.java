@@ -34,7 +34,7 @@ public class GurionRockRunner {
      *             path to the configuration file.
      */
     public static void main(String[] args) {
-        Configuration conf = InputParser.parseConfiguration("example_input_with_error\\configuration_file.json");
+        Configuration conf = InputParser.parseConfiguration("example_input_2\\configuration_file.json");
         List<Thread> threads = new LinkedList<>();
         int numOfServices = 0;
         for (Camera camera : conf.getCamerasConfiguration()) {
