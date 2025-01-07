@@ -1,5 +1,6 @@
 package bgu.spl.mics.application.services;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.Broadcast;
@@ -28,11 +29,13 @@ public class CameraService extends MicroService {
 
     private Camera camera;
     private StatisticalFolder statisticalFolder;
+    private CountDownLatch latch;
 
-    public CameraService(Camera camera) {
+    public CameraService(Camera camera, CountDownLatch latch) {
         super("CameraService_" + camera.getID());
         this.camera = camera;
         this.statisticalFolder = StatisticalFolder.getInstance();
+        this.latch = latch;
     }
 
     /**
@@ -74,12 +77,11 @@ public class CameraService extends MicroService {
                     } 
                     sendEvent(ev); /// Future<Boolean> futureObj            
                     statisticalFolder.increasenumDetectedObjects();
-                    statisticalFolder.setLastDetectedObj(stampedObj.getDetectedObjects());
+                    statisticalFolder.setCameraFrame(getName(), currentTime, stampedObj.getDetectedObjects());
                     //if (futureObj != null && futureObj.get(100, TimeUnit.MILLISECONDS) == null) {
                         //System.out.println(getName() + " Future timed out");
                     //}
-                }
-            
+                }   
         });
         this.subscribeBroadcast(TerminateBroadcast.class, Terminate -> {
             if (Terminate.getSender().equals("FusionSlamService")) {
@@ -93,6 +95,7 @@ public class CameraService extends MicroService {
         });
         System.out.println(getName() + " is UP!"); /////////////
         camera.setStatus(STATUS.UP);
+        latch.countDown();  
     }
 
     public STATUS getStatus() {

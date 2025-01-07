@@ -10,6 +10,7 @@ import bgu.spl.mics.application.messages.TrackedObjectEvent;
 import bgu.spl.mics.application.objects.*;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * FusionSlamService integrates data from multiple sensors to build and update
@@ -30,14 +31,16 @@ public class FusionSlamService extends MicroService {
     private STATUS status;
     private int numOfServices;
     private StatisticalFolder statisticalFolder;
+    private CountDownLatch latch;
 
 
-    public FusionSlamService(FusionSlam fusionSlam, int numOfServices) {
+    public FusionSlamService(FusionSlam fusionSlam, int numOfServices, CountDownLatch latch) {
         super("FusionSlamService");
         this.fs = fusionSlam;
         this.status = STATUS.DOWN;
         this.numOfServices = numOfServices;
         statisticalFolder = StatisticalFolder.getInstance();
+        this.latch = latch;
     }
 
     /**
@@ -95,6 +98,7 @@ public class FusionSlamService extends MicroService {
         });
         status = STATUS.UP;
         System.out.println(getName() + "is UP!");
+        latch.countDown();
     }
 
     public STATUS getStatus() { // getStatus for the main to know that the service we

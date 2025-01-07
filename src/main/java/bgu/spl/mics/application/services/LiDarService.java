@@ -1,5 +1,6 @@
 package bgu.spl.mics.application.services;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import bgu.spl.mics.Callback;
@@ -32,12 +33,14 @@ public class LiDarService extends MicroService {
     private LiDarWorkerTracker liDar;
     private long timeTick;
     private StatisticalFolder statisticalFolder;
+    private CountDownLatch latch;
 
-    public LiDarService(LiDarWorkerTracker LiDarWorkerTracker) {
+    public LiDarService(LiDarWorkerTracker LiDarWorkerTracker, CountDownLatch latch) {
         super("LidarService_" + LiDarWorkerTracker.getID());
         liDar = LiDarWorkerTracker;
         timeTick = 0;
         this.statisticalFolder = StatisticalFolder.getInstance();
+        this.latch = latch;
 
     }
 
@@ -74,7 +77,7 @@ public class LiDarService extends MicroService {
                     System.out.println(getName() + " sent trackedObj: " + trackObj.getID() + "(from notYet)");
                 }
                 sendEvent(new TrackedObjectEvent(listTracked, getName())); //  Future<Boolean> futureObj = 
-                statisticalFolder.setlastTrackedObj(listTracked);
+                statisticalFolder.setLiDarFrame(getName(), timeTick, listTracked);
                 statisticalFolder.increasenumTrackedObjects();
             }
         });
@@ -113,7 +116,7 @@ public class LiDarService extends MicroService {
                 sendEvent(new TrackedObjectEvent(listTracked, getName())); //Future<Boolean> futureObj = 
                 
                 statisticalFolder.increasenumTrackedObjects();
-                statisticalFolder.setlastTrackedObj(listTracked);
+                statisticalFolder.setLiDarFrame(getName(), timeTick, listTracked);
                 DetectedObjectsEvent.complete();
                 complete(DetectedObjectsEvent, true);
                 //System.out.println(getName() + " completed detectedOBj from listTracked");
@@ -123,6 +126,7 @@ public class LiDarService extends MicroService {
         });
         liDar.setStatus(STATUS.UP);
         System.out.println(getName() + "is UP!");
+        latch.countDown();
 }
 
 public STATUS getStatus() {

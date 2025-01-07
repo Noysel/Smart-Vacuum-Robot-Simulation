@@ -92,6 +92,8 @@ public interface MessageBus {
      * @throws InterruptedException if interrupted while waiting for a message
      *                              to became available..
      */
-    Message awaitMessage(MicroService m) throws InterruptedException; 
+    Message awaitMessage(MicroService m) throws InterruptedException;
     
+    
+    public boolean isRegistered(MicroService m);
 }

@@ -1,5 +1,6 @@
 package bgu.spl.mics.application.services;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import bgu.spl.mics.Callback;
@@ -30,12 +31,14 @@ public class PoseService extends MicroService {
 
     private GPSIMU gpsimu;
     private StatisticalFolder statisticalFolder;
+    private CountDownLatch latch;
 
 
-    public PoseService(GPSIMU gpsimu) {
+    public PoseService(GPSIMU gpsimu, CountDownLatch latch) {
         super("PoseService");
         this.gpsimu = gpsimu;
         this.statisticalFolder = StatisticalFolder.getInstance();
+        this.latch = latch;
     }
 
     /**
@@ -71,5 +74,6 @@ public class PoseService extends MicroService {
         });
         gpsimu.setStatus(STATUS.UP);
         System.out.println(getName() + "is UP!");
+        latch.countDown();
     }
 }

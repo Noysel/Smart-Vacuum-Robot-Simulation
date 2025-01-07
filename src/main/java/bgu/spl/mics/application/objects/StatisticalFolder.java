@@ -7,8 +7,11 @@ import com.google.gson.GsonBuilder;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 import bgu.spl.mics.MessageBusImpl;
 
 /**
@@ -25,8 +28,10 @@ public class StatisticalFolder {
     private String error;
     private String faultySensor;
     private List<LandMark> worldMap;
-    private LastFrames lastFrames = new LastFrames();;
+    private Map<String, CameraFrame> lastCameraFrames = new HashMap<>();;
+    private Map<String, LiDarFrame> lastLidarFrames = new HashMap<>();;
     private List<Pose> poses = new LinkedList<>();
+
 
     private static class SingletonHolder {
         private volatile static StatisticalFolder instance = new StatisticalFolder();
@@ -41,6 +46,8 @@ public class StatisticalFolder {
         this.numDetectedObjects = new AtomicInteger(numDetectedObjects);
         this.numTrackedObjects = new AtomicInteger(numTrackedObjects);
         this.numLandMarks = new AtomicInteger(numLandMarks);
+        this.lastCameraFrames = new HashMap<>();
+        this.lastLidarFrames = new HashMap<>();
         //this.poses = new LinkedList<>();
     }
 
@@ -50,6 +57,28 @@ public class StatisticalFolder {
         this.numTrackedObjects = new AtomicInteger(0);
         this.numLandMarks = new AtomicInteger(0);
     }
+
+    public void setCameraFrame(String cameraName, long time, List<DetectedObject> detObjList) {
+        CameraFrame cameraFrame = lastCameraFrames.get(cameraName);
+        if (cameraFrame == null) {
+            lastCameraFrames.put(cameraName, new CameraFrame(time, detObjList));
+        }
+        else {
+            cameraFrame.setTime(time);
+            cameraFrame.setDetectedObj(detObjList);
+        }
+    }
+
+    public void setLiDarFrame(String liDarName, long time, List<TrackedObject> trackedObjects) {
+    LiDarFrame lidarFrame = lastLidarFrames.get(liDarName);
+    if (lidarFrame == null) {
+        lidarFrame = new LiDarFrame(time, trackedObjects);
+        lastLidarFrames.put(liDarName, lidarFrame);
+    } else {
+        lidarFrame.setTime(time);
+        lidarFrame.setTrackedObj(trackedObjects);
+    }
+}
 
     public int getSystemRumTime() {
         return systemRunTime.get();
@@ -115,14 +144,6 @@ public class StatisticalFolder {
         } while (!numLandMarks.compareAndSet(oldVal, newVal));
     }
 
-    public void setLastDetectedObj(List<DetectedObject> lastDetectedObj) {
-        lastFrames.setLastDetectedObj(lastDetectedObj);
-    }
-
-    public void setlastTrackedObj(List<TrackedObject> lastTrackedObj) {
-        lastFrames.setlastTrackedObj(lastTrackedObj);
-    }
-
     public void addPose(Pose lastPose) {
         this.poses.add(lastPose);
     }
@@ -132,19 +153,16 @@ public class StatisticalFolder {
     }
 
     public void createOutputFile(String filename) {
-        System.out.println(isError() + ", " + error + "IS ERROR @@@@@@@@@@@@@@@@@@@@");
-
-
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         try (FileWriter writer = new FileWriter(filename)) {
             if (isError()) {
                 ErrorOutputData errorData = new ErrorOutputData(
                     error,
                     faultySensor,
-                    lastFrames,
+                    lastCameraFrames,
+                    lastLidarFrames,
                     poses,
-                    new Statistics(systemRunTime.get(), numDetectedObjects.get(), numTrackedObjects.get(), numLandMarks.get(), worldMap),
-                    worldMap
+                    new Statistics(systemRunTime.get(), numDetectedObjects.get(), numTrackedObjects.get(), numLandMarks.get(), worldMap)
                 );
                 gson.toJson(errorData, writer);
             } else {
@@ -182,19 +200,19 @@ public class StatisticalFolder {
     private class ErrorOutputData {
         String error;
         String faultySensor;
-        LastFrames lastFrames;
+        Map<String, CameraFrame> lastCameraFrames;
+        Map<String, LiDarFrame> lastLidarFrames;
         List<Pose> poses;
         Statistics statistics;
-        List<LandMark> landMarks;
 
 
-        public ErrorOutputData(String error, String faultySensor, LastFrames lastFrames, List<Pose> poses, Statistics statistics, List<LandMark> landMarks) {
+        public ErrorOutputData(String error, String faultySensor, Map<String, CameraFrame> lastCameraFrames, Map<String, LiDarFrame> lastLidarFrames, List<Pose> poses, Statistics statistics) {
             this.error = error;
             this.faultySensor = faultySensor;
-            this.lastFrames = lastFrames;
+            this.lastCameraFrames = lastCameraFrames;
+            this.lastLidarFrames = lastLidarFrames;
             this.poses = poses;
             this.statistics = statistics;
-            this.landMarks = landMarks;
         }
     }
 
@@ -215,15 +233,35 @@ public class StatisticalFolder {
     }
 }
 
-class LastFrames {
-    private volatile List<DetectedObject> lastDetectedObj;
-    private volatile List<TrackedObject> lastTrackedObj;
+class CameraFrame {
+    long time;
+    List<DetectedObject> detectedObjects;
 
-    public synchronized void setLastDetectedObj(List<DetectedObject> lastDetectedObj) {
-        this.lastDetectedObj = lastDetectedObj;
+    CameraFrame(long time, List<DetectedObject> detectedObjects) {
+        this.time = time;
+        this.detectedObjects = detectedObjects;
     }
 
-    public synchronized void setlastTrackedObj(List<TrackedObject> lastTrackedObj) {
-        this.lastTrackedObj = lastTrackedObj;
+    public void setTime(long time) {
+        this.time = time;
+    }
+    public void setDetectedObj(List<DetectedObject> detectedObjects) {
+        this.detectedObjects = detectedObjects;
+    }
+}
+
+class LiDarFrame {
+    long time;
+    List<TrackedObject> trackedObjects;
+
+    LiDarFrame(long time, List<TrackedObject> trackedObjects) {
+        this.time = time;
+        this.trackedObjects = trackedObjects;
+    }
+    public void setTime(long time) {
+        this.time = time;
+    }
+    public void setTrackedObj(List<TrackedObject> trackedObjects) {
+        this.trackedObjects = trackedObjects;
     }
 }

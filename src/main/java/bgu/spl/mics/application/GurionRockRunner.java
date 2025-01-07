@@ -2,13 +2,14 @@ package bgu.spl.mics.application;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
-import bgu.spl.mics.Parsers.InputParser;
 import bgu.spl.mics.application.objects.Camera;
 import bgu.spl.mics.application.objects.FusionSlam;
 import bgu.spl.mics.application.objects.GPSIMU;
 import bgu.spl.mics.application.objects.LiDarWorkerTracker;
 import bgu.spl.mics.application.objects.STATUS;
+import bgu.spl.mics.application.objects.StatisticalFolder;
 import bgu.spl.mics.application.services.CameraService;
 import bgu.spl.mics.application.services.FusionSlamService;
 import bgu.spl.mics.application.services.LiDarService;
@@ -35,54 +36,66 @@ public class GurionRockRunner {
      */
     public static void main(String[] args) {
         Configuration conf = InputParser.parseConfiguration("example_input_2\\configuration_file.json");
-        List<Thread> threads = new LinkedList<>();
-        int numOfServices = 0;
-        for (Camera camera : conf.getCamerasConfiguration()) {
-            Thread cameraService = new Thread(new CameraService(camera));
-            threads.add(cameraService);
-            numOfServices++;
-            cameraService.start();
-        }
-        for (LiDarWorkerTracker lidar : conf.getLidarConfigurations()) {
-            Thread lidarService = new Thread(new LiDarService(lidar));
-            threads.add(lidarService);
-            numOfServices++;
-            lidarService.start();
-        }
-        GPSIMU gps = new GPSIMU(conf.getPoseJsonFile());
-        Thread poseService = new Thread(new PoseService(gps));
-        numOfServices++;
-        poseService.start();
-        Thread fusionSlamService = new Thread(new FusionSlamService(FusionSlam.getInstance(), numOfServices));
-        fusionSlamService.start();
-        Thread timeService = new Thread(new TimeService(conf.getTickTime(), conf.getDuration())); 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        /* 
-        while (!threads.isEmpty() || fusionSlamService.get)
-                || gps.getStatus() == STATUS.DOWN) {
-            for (CameraService camServ : camServList) {
-                if (camServ.getStatus() == STATUS.UP) {
-                    camServList.remove(camServ);
-                }
-            }
-            for (LiDarService lidarServ : lidarServList) {
-                if (lidarServ.getStatus() == STATUS.UP) {
-                    lidarServList.remove(lidarServ);
-                }
-            }
-        }
-            */
-        timeService.run();
+        int numOfServices = conf.getCamerasConfiguration().size() + conf.getLidarConfigurations().size() + 2; // +2 for GPS and FusionSlam
+        CountDownLatch readyLatch = new CountDownLatch(numOfServices);
 
-        for (Thread thread : threads) {
+        List<Thread> serviceThreads = new LinkedList<>();
+        
+        // Start CameraService for each camera configuration
+        for (Camera camera : conf.getCamerasConfiguration()) {
+            Thread cameraThread = new Thread(() -> {
+                new CameraService(camera, readyLatch).run();
+                readyLatch.countDown();
+            });
+            serviceThreads.add(cameraThread);
+            cameraThread.start();
+        }
+
+        // Start LiDarService for each LiDar configuration
+        for (LiDarWorkerTracker lidar : conf.getLidarConfigurations()) {
+            Thread lidarThread = new Thread(() -> {
+                new LiDarService(lidar, readyLatch).run();
+                readyLatch.countDown();
+            });
+            serviceThreads.add(lidarThread);
+            lidarThread.start();
+        }
+
+        // Start PoseService
+        GPSIMU gps = new GPSIMU(conf.getPoseJsonFile());
+        Thread poseThread = new Thread(() -> {
+            new PoseService(gps, readyLatch).run();
+            readyLatch.countDown();
+        });
+        serviceThreads.add(poseThread);
+        poseThread.start();
+
+        // Start FusionSlamService
+        Thread fusionSlamService = new Thread(() -> {
+            new FusionSlamService(FusionSlam.getInstance(), numOfServices, readyLatch).run();
+            readyLatch.countDown();
+        });
+        serviceThreads.add(fusionSlamService);
+        fusionSlamService.start();
+
+        // Start TimeService after all other services are ready
+        try {
+            readyLatch.await();  // Wait for all services to signal they are ready
+            Thread timeService = new Thread(new TimeService(conf.getTickTime(), conf.getDuration()));
+            timeService.start();
+            serviceThreads.add(timeService);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Main thread was interrupted while waiting for services to start.");
+        }
+
+        // Wait for all threads to complete
+        for (Thread thread : serviceThreads) {
             try {
                 thread.join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                System.err.println("Main thread was interrupted while waiting for a service thread to finish.");
             }
         }
     }

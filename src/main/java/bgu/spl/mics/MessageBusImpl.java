@@ -134,4 +134,8 @@ public class MessageBusImpl implements MessageBus {
 		//System.out.println(m.getName() + " Waiting Queue size: " + queue.size());
 		return queue.take(); // This will block until a message is available.
 	}
+
+	public boolean isRegistered(MicroService m) {
+		return msqMap.containsKey(m);
+	}
 }
