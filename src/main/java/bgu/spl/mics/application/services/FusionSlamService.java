@@ -32,15 +32,17 @@ public class FusionSlamService extends MicroService {
     private int numOfServices;
     private StatisticalFolder statisticalFolder;
     private CountDownLatch latch;
+    private String filePath;
 
 
-    public FusionSlamService(FusionSlam fusionSlam, int numOfServices, CountDownLatch latch) {
+    public FusionSlamService(FusionSlam fusionSlam, int numOfServices, CountDownLatch latch, String filePath) {
         super("FusionSlamService");
         this.fs = fusionSlam;
         this.status = STATUS.DOWN;
         this.numOfServices = numOfServices;
         statisticalFolder = StatisticalFolder.getInstance();
         this.latch = latch;
+        this.filePath = filePath;
     }
 
     /**
@@ -65,7 +67,7 @@ public class FusionSlamService extends MicroService {
                     sendEvent(new KillTimeEvent());
                     sendBroadcast(new TerminateBroadcast(getName()));
                     statisticalFolder.setWorldMap(fs.getWorldMap());
-                    statisticalFolder.createOutputFile("example_input_2\\output_file.json");
+                    statisticalFolder.createOutputFile(filePath + "/output_file.json");
                     terminate();
                 }
             }
@@ -75,7 +77,7 @@ public class FusionSlamService extends MicroService {
         subscribeBroadcast(CrashedBroadcast.class, Crashed -> {
             sendEvent(new KillTimeEvent());
             statisticalFolder.setWorldMap(fs.getWorldMap());
-            statisticalFolder.createOutputFile("example_input_2\\OutPutError.json");
+            statisticalFolder.createOutputFile(filePath + "/OutPutError.json");
             terminate();
         });
 

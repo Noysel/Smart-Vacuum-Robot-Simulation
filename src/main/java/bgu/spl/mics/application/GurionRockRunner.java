@@ -1,5 +1,6 @@
 package bgu.spl.mics.application;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -35,7 +36,11 @@ public class GurionRockRunner {
      *             path to the configuration file.
      */
     public static void main(String[] args) {
-        Configuration conf = InputParser.parseConfiguration("example_input_2\\configuration_file.json");
+        if (args.length < 1) {
+            System.err.println("Need path for the configuration file!");
+        }
+        String configFilePath = args[0];
+        Configuration conf = InputParser.parseConfiguration(configFilePath);
         int numOfServices = conf.getCamerasConfiguration().size() + conf.getLidarConfigurations().size() + 2; // +2 for GPS and FusionSlam
         CountDownLatch readyLatch = new CountDownLatch(numOfServices);
 
@@ -45,7 +50,6 @@ public class GurionRockRunner {
         for (Camera camera : conf.getCamerasConfiguration()) {
             Thread cameraThread = new Thread(() -> {
                 new CameraService(camera, readyLatch).run();
-                readyLatch.countDown();
             });
             serviceThreads.add(cameraThread);
             cameraThread.start();
@@ -55,7 +59,6 @@ public class GurionRockRunner {
         for (LiDarWorkerTracker lidar : conf.getLidarConfigurations()) {
             Thread lidarThread = new Thread(() -> {
                 new LiDarService(lidar, readyLatch).run();
-                readyLatch.countDown();
             });
             serviceThreads.add(lidarThread);
             lidarThread.start();
@@ -65,15 +68,14 @@ public class GurionRockRunner {
         GPSIMU gps = new GPSIMU(conf.getPoseJsonFile());
         Thread poseThread = new Thread(() -> {
             new PoseService(gps, readyLatch).run();
-            readyLatch.countDown();
         });
         serviceThreads.add(poseThread);
         poseThread.start();
 
         // Start FusionSlamService
+        String basePath = new File(configFilePath).getParent();
         Thread fusionSlamService = new Thread(() -> {
-            new FusionSlamService(FusionSlam.getInstance(), numOfServices, readyLatch).run();
-            readyLatch.countDown();
+            new FusionSlamService(FusionSlam.getInstance(), numOfServices, readyLatch, basePath).run();
         });
         serviceThreads.add(fusionSlamService);
         fusionSlamService.start();

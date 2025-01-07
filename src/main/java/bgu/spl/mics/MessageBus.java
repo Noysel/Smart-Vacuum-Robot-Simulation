@@ -18,6 +18,18 @@ public interface MessageBus {
      * @param type The type to subscribe to,
      * @param m    The subscribing micro-service.
      */
+
+      /**
+     * Invariant:
+     * - The `subMessageMap` must consistently map event types to the microservices subscribed to them.
+     *
+     * Precondition:
+     * - `type` is not null and represents a valid subclass of `Event`.
+     * - `m` is not null and is a registered microservice.
+     *
+     * Postcondition:
+     * - The microservice `m` is added to the list of subscribers for events of type `type`.
+     */
     <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m);
 
     /**
@@ -58,6 +70,21 @@ public interface MessageBus {
      * @return {@link Future<T>} object to be resolved once the processing is complete,
      * 	       null in case no micro-service has subscribed to {@code e.getClass()}.
      */
+
+          /**
+     * Invariant:
+     * - Each event of type `e.getClass()` is distributed to one microservice in a round-robin fashion.
+     * - The `eventFutureMap` must consistently map events to their associated `Future` objects.
+     *
+     * Precondition:
+     * - `e` is not null and represents a valid `Event`.
+     *
+     * Postcondition:
+     * - If a microservice is subscribed to `e.getClass()`, the event is added to its queue in a round-robin fashion.
+     * - A `Future` object associated with the event is returned.
+     * - If no microservice is subscribed to `e.getClass()`, `null` is returned.
+     */
+
     <T> Future<T> sendEvent(Event<T> e);
 
     /**
@@ -65,6 +92,19 @@ public interface MessageBus {
      * <p>
      * @param m the micro-service to create a queue for.
      */
+/**
+     * Invariant:
+     * - Each registered microservice must have a unique, non-null message queue in the internal mapping (`msqMap`).
+     *
+     * Precondition:
+     * - `m` is not null and represents a valid microservice that has not been previously registered.
+     *
+     * Postcondition:
+     * - A new message queue is allocated for the microservice `m`.
+     * - The microservice `m` is added to the internal mappings.
+     */
+
+
     void register(MicroService m);
 
     /**

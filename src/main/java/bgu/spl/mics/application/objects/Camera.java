@@ -51,12 +51,20 @@ public class Camera {
         return this.frequency;
     }
 
+    public List<StampedDetectedObjects> getAllObj() {
+        return allObjects;
+    }
+
     public STATUS getStatus() {
         return this.status;
     }
 
     public void setStatus(STATUS status) {
         this.status = status;
+    }
+
+    public void setAllObj(List<StampedDetectedObjects> allObj) {
+        this.allObjects = allObj;
     }
 
     public String getCameraKey() {
@@ -66,6 +74,34 @@ public class Camera {
     public List<StampedDetectedObjects> getDetectedObjectList() {
         return this.detectedObjectsList;
     }
+
+/**
+ * Processes the detected objects for a given tick time by checking if the objects
+ * fall within the camera's frequency window and updates the list of detected objects.
+ *
+ * Invariant:
+ * - `allObjects` contains only valid `StampedDetectedObjects` with unique timestamps.
+ * - `detectedObjectsList` contains `StampedDetectedObjects` that have been processed from `allObjects`.
+ *
+ * Preconditions:
+ * - `tickTime` must be a non-negative value.
+ * - `allObjects` must be initialized and not null.
+ *
+ * Postconditions:
+ * - If `allObjects` is empty:
+ *   - Returns a `StampedDetectedObjects` instance with a time of `-2` and a null object list.
+ * - If no matching objects are found for `tickTime`:
+ *   - Returns `null`.
+ * - If an object matches the `tickTime` (considering frequency):
+ *   - If the object's detected objects list is empty:
+ *     - Returns `null`.
+ *   - If any detected object in the list has an ID of "ERROR":
+ *     - Returns a `StampedDetectedObjects` instance with a time of `-1` and the detected objects list.
+ *   - Otherwise:
+ *     - The object is added to `detectedObjectsList`.
+ *     - The object is removed from `allObjects`.
+ *     - The matched `StampedDetectedObjects` instance is returned.
+ */
 
     public StampedDetectedObjects interval(long tickTime) {
         if (allObjects.isEmpty()) {
